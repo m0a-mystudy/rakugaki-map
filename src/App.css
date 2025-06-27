@@ -17,7 +17,12 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 200px;
 }
 
 .draw-button {
@@ -29,7 +34,6 @@
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .draw-button:hover {
@@ -44,4 +48,94 @@
 
 .draw-button.active:hover {
   background-color: #e84050;
+}
+
+.tool-section, .color-section, .width-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tool-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tool-button {
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.tool-button:hover {
+  background-color: #f0f0f0;
+}
+
+.tool-button.active {
+  border-color: #3742fa;
+  background-color: #e8e9ff;
+}
+
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.color-button {
+  width: 36px;
+  height: 36px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.color-button:hover {
+  transform: scale(1.1);
+}
+
+.color-button.active {
+  border-color: #333;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+}
+
+.width-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd;
+  outline: none;
+}
+
+.width-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3742fa;
+  cursor: pointer;
+}
+
+.width-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3742fa;
+  cursor: pointer;
 }
