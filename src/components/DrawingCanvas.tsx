@@ -1,40 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
-import type { DrawingTool } from '../App'
+import type { DrawingTool, Shape } from '../types'
 import './DrawingCanvas.css'
 
 interface DrawingCanvasProps {
   map: google.maps.Map
   isDrawing: boolean
-  onDrawingChange: (isDrawing: boolean) => void
+  onDrawingChange?: (isDrawing: boolean) => void
   selectedColor: string
   selectedTool: DrawingTool
   lineWidth: number
-}
-
-interface Point {
-  lat: number
-  lng: number
-}
-
-interface Shape {
-  type: DrawingTool
-  points: Point[]
-  color: string
-  width: number
+  shapes: Shape[]
+  onShapesChange: (shapes: Shape[]) => void
 }
 
 function DrawingCanvas({ 
   map, 
   isDrawing, 
-  onDrawingChange,
   selectedColor,
   selectedTool,
-  lineWidth
+  lineWidth,
+  shapes,
+  onShapesChange
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<google.maps.OverlayView | null>(null)
   const [isMouseDown, setIsMouseDown] = useState(false)
-  const [shapes, setShapes] = useState<Shape[]>([])
   const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number}[]>([])
   const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
   const shapesRef = useRef<Shape[]>([])
@@ -244,7 +234,7 @@ function DrawingCanvas({
     setIsMouseDown(false)
     
     if (currentPixelLine.length > 1) {
-      const latLngPoints: Point[] = []
+      const latLngPoints: { lat: number; lng: number }[] = []
       
       if (selectedTool === 'pen') {
         currentPixelLine.forEach(pixel => {
@@ -273,12 +263,13 @@ function DrawingCanvas({
       }
 
       if (latLngPoints.length > 1) {
-        setShapes(prev => [...prev, {
+        const newShape: Shape = {
           type: selectedTool,
           points: latLngPoints,
           color: selectedColor,
           width: lineWidth
-        }])
+        }
+        onShapesChange([...shapes, newShape])
       }
     }
     
