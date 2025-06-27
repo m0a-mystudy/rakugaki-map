@@ -50,6 +50,62 @@
   background-color: #e84050;
 }
 
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.action-button:hover:not(:disabled) {
+  background-color: #f8f9fa;
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-button.save {
+  background-color: #2ed573;
+  color: white;
+  border-color: #2ed573;
+}
+
+.action-button.save:hover:not(:disabled) {
+  background-color: #26d065;
+}
+
+.action-button.clear {
+  background-color: #ff6b6b;
+  color: white;
+  border-color: #ff6b6b;
+}
+
+.action-button.clear:hover:not(:disabled) {
+  background-color: #ff5252;
+}
+
+.action-button.share {
+  background-color: #3742fa;
+  color: white;
+  border-color: #3742fa;
+}
+
+.action-button.share:hover:not(:disabled) {
+  background-color: #2f36e8;
+}
+
 .tool-section, .color-section, .width-section {
   display: flex;
   flex-direction: column;

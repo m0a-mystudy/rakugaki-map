@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
+import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
+import type { DrawingTool, Shape } from './types'
 import './App.css'
 
 const mapContainerStyle = {
@@ -8,7 +10,7 @@ const mapContainerStyle = {
   height: '100vh'
 }
 
-const center = {
+const defaultCenter = {
   lat: 35.6762,
   lng: 139.6503
 }
@@ -18,22 +20,89 @@ const options = {
   zoomControl: true,
 }
 
-export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'line'
-
 function App() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#ff4757')
   const [selectedTool, setSelectedTool] = useState<DrawingTool>('pen')
   const [lineWidth, setLineWidth] = useState(3)
+  const [shapes, setShapes] = useState<Shape[]>([])
+  const [drawingId, setDrawingId] = useState<string>('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [center, setCenter] = useState(defaultCenter)
+  const [zoom, setZoom] = useState(15)
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const id = urlParams.get('id')
+    
+    if (id) {
+      setDrawingId(id)
+      loadDrawingData(id)
+    } else {
+      const newId = generateDrawingId()
+      setDrawingId(newId)
+      window.history.replaceState({}, '', `?id=${newId}`)
+    }
+  }, [])
+
+  const loadDrawingData = async (id: string) => {
+    try {
+      const data = await loadDrawing(id)
+      if (data) {
+        setShapes(data.shapes)
+        setCenter(data.center)
+        setZoom(data.zoom)
+      }
+    } catch (error) {
+      console.error('Failed to load drawing:', error)
+    }
+  }
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map)
+    
+    google.maps.event.addListener(map, 'center_changed', () => {
+      const center = map.getCenter()
+      if (center) {
+        setCenter({ lat: center.lat(), lng: center.lng() })
+      }
+    })
+    
+    google.maps.event.addListener(map, 'zoom_changed', () => {
+      setZoom(map.getZoom() || 15)
+    })
   }, [])
 
   const onUnmount = useCallback(() => {
     setMap(null)
   }, [])
+
+  const handleSave = async () => {
+    if (!drawingId || shapes.length === 0) return
+    
+    setIsSaving(true)
+    try {
+      await saveDrawing(drawingId, shapes, center, zoom)
+      console.log('Drawing saved successfully!')
+    } catch (error) {
+      console.error('Failed to save drawing:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleClear = () => {
+    if (confirm('すべての描画を削除しますか？')) {
+      setShapes([])
+    }
+  }
+
+  const handleShare = () => {
+    const url = window.location.href
+    navigator.clipboard.writeText(url)
+    alert('共有リンクをコピーしました！')
+  }
 
   const colors = [
     '#ff4757', // 赤
@@ -53,7 +122,7 @@ function App() {
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
             center={center}
-            zoom={15}
+            zoom={zoom}
             onLoad={onLoad}
             onUnmount={onUnmount}
             options={options}
@@ -66,6 +135,8 @@ function App() {
               selectedColor={selectedColor}
               selectedTool={selectedTool}
               lineWidth={lineWidth}
+              shapes={shapes}
+              onShapesChange={setShapes}
             />
           )}
         </div>
@@ -77,6 +148,29 @@ function App() {
         >
           {isDrawing ? '描画を終了' : '描画を開始'}
         </button>
+        
+        <div className="action-buttons">
+          <button 
+            className="action-button save"
+            onClick={handleSave}
+            disabled={isSaving || shapes.length === 0}
+          >
+            {isSaving ? '保存中...' : '保存'}
+          </button>
+          <button 
+            className="action-button clear"
+            onClick={handleClear}
+            disabled={shapes.length === 0}
+          >
+            クリア
+          </button>
+          <button 
+            className="action-button share"
+            onClick={handleShare}
+          >
+            共有
+          </button>
+        </div>
         
         {isDrawing && (
           <>
