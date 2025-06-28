@@ -6,9 +6,19 @@
   height: 100%;
   pointer-events: none;
   z-index: 100;
+  /* Prevent text selection and touch interference */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .drawing-canvas.drawing {
   pointer-events: auto;
   cursor: crosshair;
+  /* Additional touch optimizations for drawing mode */
+  touch-action: none;
+  -ms-touch-action: none;
 }

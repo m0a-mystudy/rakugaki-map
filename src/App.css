@@ -2,6 +2,14 @@
   position: relative;
   width: 100%;
   height: 100vh;
+  /* Prevent text selection during drawing */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent touch actions that interfere with drawing */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .map-container {
@@ -23,6 +31,11 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   min-width: 200px;
+  /* Re-enable text selection for controls */
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
 }
 
 .draw-button {
