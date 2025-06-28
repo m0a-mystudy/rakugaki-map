@@ -234,7 +234,8 @@ npm run build
 - APIキーの制限設定を確認
 - ブラウザの開発者ツールでエラーメッセージを確認
 
-### 保存機能が動作しない
+### 保存機能が動作しない（permission-denied エラー）
+- **最も一般的**: [Firestore設定手順](./FIRESTORE_SETUP.md) を確認してセキュリティルールを設定
 - Firebase設定が正しいか確認
 - Firestore Database が作成されているか確認
 - ブラウザの開発者ツールでネットワークエラーを確認
