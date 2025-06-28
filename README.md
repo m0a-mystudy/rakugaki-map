@@ -24,31 +24,46 @@ npm install
 
 ### 2. Google Cloud Platform (GCP) 設定
 
-#### 2.1 プロジェクトの作成
+#### 自動セットアップ（Terraform使用 - 推奨）
 
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. 新しいプロジェクトを作成するか、既存のプロジェクトを選択
-3. プロジェクトIDをメモしておく
+1. **前提条件**
+   - [Terraform](https://www.terraform.io/downloads) のインストール
+   - [gcloud CLI](https://cloud.google.com/sdk/docs/install) のインストール
+   - GCPプロジェクトの作成と請求先アカウントの設定
 
-#### 2.2 Google Maps JavaScript API の有効化
+2. **Terraformでのセットアップ**
+```bash
+# 認証
+gcloud auth application-default login
 
-1. Google Cloud Console で「APIとサービス」→「ライブラリ」に移動
-2. "Maps JavaScript API" を検索して選択
-3. 「有効にする」をクリック
+# Terraform設定
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集してproject_idを設定
 
-#### 2.3 APIキーの作成
+# リソース作成
+terraform init
+terraform apply
 
-1. 「APIとサービス」→「認証情報」に移動
-2. 「認証情報を作成」→「APIキー」をクリック
-3. 作成されたAPIキーをコピー
+# APIキーの取得
+terraform output -raw api_key
+```
 
-#### 2.4 APIキーの制限設定（推奨）
+詳細は [terraform/README.md](terraform/README.md) を参照
 
-1. 作成したAPIキーをクリックして編集画面を開く
-2. 「アプリケーションの制限」で以下を設定：
-   - **開発環境**: 「なし」または「HTTPリファラー」で `localhost:*` を追加
-   - **本番環境**: 「HTTPリファラー」で本番ドメインを追加
-3. 「APIの制限」で「キーを制限」を選択し、「Maps JavaScript API」のみを許可
+#### 手動セットアップ
+
+1. **プロジェクトの作成**
+   - [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+   - 新しいプロジェクトを作成するか、既存のプロジェクトを選択
+
+2. **Google Maps JavaScript API の有効化**
+   - 「APIとサービス」→「ライブラリ」→ "Maps JavaScript API" を検索して有効化
+
+3. **APIキーの作成と制限**
+   - 「APIとサービス」→「認証情報」→「APIキー」を作成
+   - HTTPリファラー制限: `localhost:*` (開発用)
+   - API制限: Maps JavaScript API のみ許可
 
 ### 3. Firebase設定
 
@@ -69,18 +84,19 @@ npm install
 
 #### 3.3 Firestore Database の設定
 
+**Terraformでセットアップ済みの場合**: Firestoreは自動作成されています
+
+**手動セットアップの場合**:
 1. Firebase Console で「Firestore Database」を選択
 2. 「データベースの作成」をクリック
-3. セキュリティルール：
-   - **開発環境**: 「テストモードで開始」を選択
-   - **本番環境**: 以下のルールを設定
+3. データベースの場所を選択（asia-northeast1 推奨）
+4. セキュリティルール：開発は「テストモード」、本番は以下を設定
 
 ```javascript
 // Firestore Security Rules (本番環境用)
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // drawings コレクション：読み取りは全員、書き込みは認証済みユーザーのみ
     match /drawings/{documentId} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -88,8 +104,6 @@ service cloud.firestore {
   }
 }
 ```
-
-4. データベースの場所を選択（asia-northeast1 推奨）
 
 #### 3.4 Authentication の設定（将来の拡張用）
 
