@@ -1,5 +1,11 @@
-# Remote state configuration (RECOMMENDED)
-# GCS backend provides state locking and versioning automatically
+# Backend configuration for single environment setup (UNUSED)
+# This file is not used when using environment-based setup
+# Backend configuration should be in environments/{dev,prod}/main.tf
+
+# If you want to use single environment setup:
+# 1. Copy this content to backend.tf
+# 2. Remove or rename this file
+# 3. Run terraform init from the root terraform/ directory
 
 terraform {
   backend "gcs" {
