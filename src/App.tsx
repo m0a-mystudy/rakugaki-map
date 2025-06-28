@@ -24,10 +24,10 @@ const options = {
   streetViewControl: false,
   rotateControl: false,
   fullscreenControl: false,
-  // Enable satellite view for better rotation visibility
-  mapTypeId: 'hybrid',
-  // Keep flat view (no tilt)
-  tilt: 0,
+  // Use roadmap instead of hybrid for cleaner look
+  mapTypeId: 'roadmap',
+  // Minimal tilt required for rotation to work
+  tilt: 0.1,
   heading: 0,
 }
 
@@ -272,7 +272,7 @@ function App() {
     try {
       map.setOptions({
         heading: newHeading,
-        tilt: 0
+        tilt: 0.1
       })
     } catch (error) {
       // Fallback: try to recreate map with new heading
@@ -283,7 +283,7 @@ function App() {
           center: currentCenter,
           zoom: currentZoom,
           heading: newHeading,
-          tilt: 0
+          tilt: 0.1
         })
       } catch (fallbackError) {
         console.error('Failed to rotate map:', fallbackError)
@@ -297,7 +297,7 @@ function App() {
     try {
       map.setOptions({
         heading: 0,
-        tilt: 0
+        tilt: 0.1
       })
     } catch (error) {
       // Fallback
@@ -308,7 +308,7 @@ function App() {
           center: currentCenter,
           zoom: currentZoom,
           heading: 0,
-          tilt: 0
+          tilt: 0.1
         })
       } catch (fallbackError) {
         console.error('Failed to reset map rotation:', fallbackError)
