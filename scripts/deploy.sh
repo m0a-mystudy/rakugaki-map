@@ -59,7 +59,7 @@ firebase deploy --only hosting
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ デプロイ完了！${NC}"
-    
+
     # Get hosting URL
     PROJECT_ID=$(firebase use --project-name)
     if [ "$ENVIRONMENT" = "dev" ]; then

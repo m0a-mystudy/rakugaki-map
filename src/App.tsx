@@ -30,10 +30,10 @@ function App() {
   const [shapes, setShapes] = useState<Shape[]>([])
   const [drawingId, setDrawingId] = useState<string>('')
   const [isSaving, setIsSaving] = useState(false)
+  const [lastShapeCount, setLastShapeCount] = useState(0)
   const [center, setCenter] = useState(defaultCenter)
   const [zoom, setZoom] = useState(15)
   const [user, setUser] = useState<any>(null)
-  const [isAuthenticating, setIsAuthenticating] = useState(true)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -53,7 +53,6 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
       setUser(user)
-      setIsAuthenticating(false)
       if (user) {
         console.log('🔥 User authenticated:', user.uid)
       } else {
@@ -64,6 +63,21 @@ function App() {
 
     return () => unsubscribe()
   }, [])
+
+  // 描画完了時の自動保存
+  useEffect(() => {
+    // 初回ロード時やshapesが減った場合（クリア等）は保存しない
+    if (shapes.length === 0 || shapes.length <= lastShapeCount) {
+      setLastShapeCount(shapes.length)
+      return
+    }
+
+    // 新しい描画が追加された場合のみ自動保存
+    if (shapes.length > lastShapeCount) {
+      setLastShapeCount(shapes.length)
+      handleAutoSave()
+    }
+  }, [shapes, lastShapeCount, user, drawingId])
 
   const loadDrawingData = async (id: string) => {
     try {
@@ -99,11 +113,11 @@ function App() {
     setMap(null)
   }, [])
 
-  const handleSave = async () => {
-    console.log('🔥 Save button clicked', { drawingId, shapesCount: shapes.length, user: user?.uid })
+  const handleAutoSave = async () => {
+    console.log('🔥 Auto-saving drawing', { drawingId, shapesCount: shapes.length, user: user?.uid })
 
     if (!user) {
-      alert('認証中です。少々お待ちください...')
+      console.log('⚠️ User not authenticated, skipping auto-save')
       return
     }
 
@@ -122,15 +136,10 @@ function App() {
       // 保存時に現在の地図状態を取得
       const currentMapState = getCurrentMapState()
       await saveDrawing(drawingId, shapes, currentMapState.center, currentMapState.zoom)
-      alert('Drawing saved successfully!')
+      console.log('✅ Drawing auto-saved successfully')
     } catch (error) {
-      console.error('Failed to save drawing:', error)
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      if (errorMessage.includes('permission-denied')) {
-        alert('保存権限がありません。認証が必要です。')
-      } else {
-        alert(`Save failed: ${errorMessage}`)
-      }
+      console.error('Failed to auto-save drawing:', error)
+      // 自動保存のエラーはアラートを出さない（ユーザー体験を損なわないため）
     } finally {
       setIsSaving(false)
     }
@@ -195,13 +204,6 @@ function App() {
 
         <div className="action-buttons">
           <button
-            className="action-button save"
-            onClick={handleSave}
-            disabled={isSaving || shapes.length === 0 || !user}
-          >
-            {isSaving ? '保存中...' : isAuthenticating ? '認証中...' : '保存'}
-          </button>
-          <button
             className="action-button clear"
             onClick={handleClear}
             disabled={shapes.length === 0}
@@ -214,6 +216,11 @@ function App() {
           >
             共有
           </button>
+          {isSaving && (
+            <div className="saving-indicator">
+              💾 保存中...
+            </div>
+          )}
         </div>
 
         {isDrawing && (

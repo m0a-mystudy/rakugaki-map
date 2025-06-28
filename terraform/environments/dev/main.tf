@@ -45,7 +45,8 @@ variable "allowed_domains" {
     "127.0.0.1:*",
     "127.0.0.1",
     "rakugakimap-dev.web.app",
-    "rakugakimap-dev.firebaseapp.com"
+    "rakugakimap-dev.firebaseapp.com",
+    "rakugakimap-dev--*.web.app"
   ]
 }
 

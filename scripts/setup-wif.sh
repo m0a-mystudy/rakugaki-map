@@ -105,14 +105,14 @@ read -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     terraform apply -auto-approve
-    
+
     # Get outputs
     echo -e "${BLUE}📋 Workload Identity設定情報${NC}"
     echo "================================="
-    
+
     WIF_PROVIDER=$(terraform output -raw workload_identity_provider)
     WIF_SERVICE_ACCOUNT=$(terraform output -raw service_account_email)
-    
+
     echo -e "${GREEN}✅ Terraformの適用が完了しました${NC}"
     echo ""
     echo -e "${BLUE}GitHub Repository Variables に設定してください:${NC}"
@@ -123,7 +123,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}WIF_SERVICE_ACCOUNT:${NC}"
     echo "$WIF_SERVICE_ACCOUNT"
     echo ""
-    
+
     if [ "$ENVIRONMENT" = "prod" ]; then
         echo -e "${YELLOW}FIREBASE_PROJECT_ID_PROD:${NC}"
         echo "$PROJECT_ID"
@@ -132,13 +132,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "$PROJECT_ID"
     fi
     echo ""
-    
+
     echo -e "${BLUE}📖 設定手順:${NC}"
     echo "1. GitHubリポジトリの Settings → Secrets and variables → Actions"
     echo "2. Variables タブで上記の値を設定"
     echo "3. .github/workflows/deploy-wif.yml を使用してデプロイ"
     echo ""
-    
+
     echo -e "${GREEN}🎉 Workload Identity セットアップ完了！${NC}"
     echo ""
     echo -e "${BLUE}ℹ️  従来のキーベース認証との違い:${NC}"
@@ -146,7 +146,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "- ✅ 自動的に短期間のトークンを使用"
     echo "- ✅ より安全な認証方式"
     echo "- ✅ GitHub Secretsの管理が簡素化"
-    
+
 else
     echo -e "${YELLOW}⏸️  セットアップをキャンセルしました${NC}"
 fi

@@ -3,6 +3,7 @@ export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'line'
 export interface Point {
   lat: number
   lng: number
+  pressure?: number
 }
 
 export interface Shape {

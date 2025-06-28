@@ -76,14 +76,22 @@
   cursor: not-allowed;
 }
 
-.action-button.save {
-  background-color: #2ed573;
-  color: white;
-  border-color: #2ed573;
+.saving-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6c757d;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-.action-button.save:hover:not(:disabled) {
-  background-color: #26d065;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .action-button.clear {
