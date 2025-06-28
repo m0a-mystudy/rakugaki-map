@@ -17,7 +17,7 @@ resource "google_iam_workload_identity_pool" "github_pool" {
   workload_identity_pool_id = "github-actions-pool"
   display_name              = "GitHub Actions Pool"
   description              = "Workload Identity Pool for GitHub Actions CI/CD"
-  
+
   depends_on = [
     google_project_service.iam_credentials,
     google_project_service.sts
@@ -30,15 +30,15 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   workload_identity_pool_provider_id = "github-provider"
   display_name                       = "GitHub Provider"
   description                        = "OIDC provider for GitHub Actions"
-  
+
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
-    "attribute.actor"      = "assertion.actor"
     "attribute.repository" = "assertion.repository"
     "attribute.ref"        = "assertion.ref"
-    "attribute.ref_type"   = "assertion.ref_type"
   }
-  
+
+  attribute_condition = "attribute.repository=='m0a-mystudy/rakugaki-map'"
+
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
@@ -57,51 +57,20 @@ resource "google_project_iam_member" "github_actions_permissions" {
     "roles/secretmanager.secretAccessor",  # Access secrets
     "roles/firebasehosting.admin",          # Deploy to Firebase Hosting
     "roles/firebaseauth.admin",             # Manage Firebase Auth
-    "roles/firestore.dataOwner",            # Access Firestore
+    "roles/datastore.user",                 # Access Firestore
     "roles/editor",                         # Terraform infrastructure management
   ])
-  
+
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.github_actions_wif.email}"
 }
 
 # Allow GitHub Actions to impersonate the service account
-# This is for the main branch (development deployment)
-resource "google_service_account_iam_member" "github_actions_dev_binding" {
+resource "google_service_account_iam_member" "github_actions_binding" {
   service_account_id = google_service_account.github_actions_wif.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/m0a-mystudy/rakugaki-map"
-  
-  # Additional condition for main branch only
-  condition {
-    title       = "Only main branch"
-    description = "Only allow access from main branch"
-    expression  = "assertion.ref == 'refs/heads/main'"
-  }
-}
-
-# For production deployment (tags)
-resource "google_service_account_iam_member" "github_actions_prod_binding" {
-  service_account_id = google_service_account.github_actions_wif.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/m0a-mystudy/rakugaki-map"
-  
-  # Condition for version tags only
-  condition {
-    title       = "Only version tags"
-    description = "Only allow access from version tags"
-    expression  = "assertion.ref_type == 'tag' && assertion.ref.startsWith('refs/tags/v')"
-  }
-}
-
-# For PR previews
-resource "google_service_account_iam_member" "github_actions_pr_binding" {
-  service_account_id = google_service_account.github_actions_wif.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/m0a-mystudy/rakugaki-map"
-  
-  # No specific condition - PRs from any branch can create previews
 }
 
 # Outputs for GitHub Actions configuration

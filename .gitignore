@@ -1,3 +1,11 @@
 node_modules/
 dist/
 .env.local
+
+# Terraform sensitive files
+terraform.tfvars.local
+*.tfvars.local
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
