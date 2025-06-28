@@ -88,7 +88,7 @@ service cloud.firestore {
 
 ### ✅ 現在の設定（本番対応済み）
 ```javascript
-allow read: if true;                           // 誰でも読み取り可能  
+allow read: if true;                           // 誰でも読み取り可能
 allow write: if request.auth != null;         // 認証ユーザーのみ書き込み可能
 ```
 

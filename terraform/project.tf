@@ -5,12 +5,12 @@
 #   name            = "Rakugaki Map"
 #   project_id      = var.project_id
 #   billing_account = var.billing_account
-#   
+#
 #   # Enable this if you want to delete the project when running terraform destroy
 #   # WARNING: This will delete ALL resources in the project
 #   # skip_delete = false
 # }
-# 
+#
 # # Link billing account to project
 # resource "google_billing_project_info" "project_billing" {
 #   project         = google_project.rakugaki_map.project_id
