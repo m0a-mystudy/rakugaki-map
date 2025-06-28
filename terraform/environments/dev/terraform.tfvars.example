@@ -1,0 +1,11 @@
+# Development environment configuration
+# Copy this to terraform.tfvars and update with your values
+
+# GCP Project ID for development
+project_id = "your-project-dev"
+
+# Region
+region = "asia-northeast1"
+
+# Billing account (if creating new project)
+# billing_account = "XXXXXX-XXXXXX-XXXXXX"

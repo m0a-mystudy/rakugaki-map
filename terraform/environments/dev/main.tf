@@ -1,15 +1,50 @@
 # Development environment configuration
-# This demonstrates how to manage multiple environments
 
 terraform {
   required_version = ">= 1.0"
+  
+  # Development uses local state (optional: can use GCS)
+  # backend "gcs" {
+  #   bucket = "your-dev-terraform-state"
+  #   prefix = "rakugaki-map/dev"
+  # }
 }
 
+# Variables
+variable "project_id" {
+  description = "GCP Project ID for development"
+  type        = string
+}
+
+variable "region" {
+  description = "Default region"
+  type        = string
+  default     = "asia-northeast1"
+}
+
+variable "billing_account" {
+  description = "Billing account ID"
+  type        = string
+  default     = ""
+}
+
+# Use the main module
 module "rakugaki_map" {
   source = "../../"
   
-  project_id = var.project_id
-  region     = var.region
-  
-  # Environment-specific settings can be added here
+  project_id      = var.project_id
+  region          = var.region
+  billing_account = var.billing_account
+}
+
+# Outputs
+output "api_key" {
+  value       = module.rakugaki_map.api_key
+  sensitive   = true
+  description = "Google Maps API Key"
+}
+
+output "project_id" {
+  value       = module.rakugaki_map.project_id
+  description = "GCP Project ID"
 }
