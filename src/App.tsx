@@ -19,8 +19,11 @@ const defaultCenter = {
 const options = {
   disableDefaultUI: true,
   zoomControl: true,
-  rotateControl: true,
-  tilt: 45,
+  mapTypeControl: false,
+  scaleControl: false,
+  streetViewControl: false,
+  rotateControl: false,
+  fullscreenControl: false,
 }
 
 function App() {
@@ -41,6 +44,7 @@ function App() {
   const [menuPosition, setMenuPosition] = useState({ x: 20, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [mapHeading, setMapHeading] = useState(0)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -255,6 +259,20 @@ function App() {
     setIsDragging(false)
   }
 
+  const rotateMap = (degrees: number) => {
+    if (!map) return
+    const newHeading = (mapHeading + degrees) % 360
+    setMapHeading(newHeading)
+    map.setHeading(newHeading)
+  }
+
+  const resetMapRotation = () => {
+    if (!map) return
+    setMapHeading(0)
+    map.setHeading(0)
+    map.setTilt(0)
+  }
+
   const colors = [
     '#ff4757', // 赤
     '#3742fa', // 青
@@ -330,6 +348,38 @@ function App() {
           >
             {isLocating ? '📍 取得中...' : '📍 現在地'}
           </button>
+          <div className="rotation-controls">
+            <button
+              className="action-button rotate-left"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) rotateMap(-45)
+              }}
+              title="左に45度回転"
+            >
+              ↺
+            </button>
+            <button
+              className="action-button rotate-right"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) rotateMap(45)
+              }}
+              title="右に45度回転"
+            >
+              ↻
+            </button>
+            <button
+              className="action-button reset-rotation"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) resetMapRotation()
+              }}
+              title="回転をリセット"
+            >
+              🧭
+            </button>
+          </div>
           <button
             className="action-button clear"
             onClick={(e) => {

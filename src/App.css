@@ -81,6 +81,18 @@
   gap: 8px;
 }
 
+.rotation-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.rotation-controls .action-button {
+  flex: 1;
+  min-width: 40px;
+  padding: 8px 4px;
+  font-size: 16px;
+}
+
 .action-button {
   padding: 10px 16px;
   border: 1px solid #ddd;
