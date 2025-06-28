@@ -67,45 +67,31 @@ terraform apply
 
 詳細は [environments/README.md](environments/README.md) を参照
 
-### 単一環境セットアップ
+### 単一環境セットアップ（非推奨）
 
-1つの環境のみ使用する場合：
+環境分離を行わない場合、ルートディレクトリで直接実行可能ですが、**環境別セットアップを強く推奨**します。
 
-1. **認証設定**
-```bash
-gcloud auth application-default login
-```
-
-2. **変数ファイルの作成**
 ```bash
 cd terraform
-cp terraform.tfvars.example terraform.tfvars
-```
 
-3. **terraform.tfvars を編集**
-```hcl
+# 手動でterraform.tfvarsを作成
+cat > terraform.tfvars << EOF
 project_id = "your-actual-project-id"
-```
+region = "asia-northeast1"
+EOF
 
-4. **Terraform初期化とState設定**
-```bash
-# Stateバケット作成
+# 初期化とState設定
 terraform init
 terraform apply -target=google_storage_bucket.terraform_state
-
-# backend.tf を編集してバケット名を設定
+# backend.tf を編集
 terraform init -migrate-state
-```
-
-5. **リソースの作成**
-```bash
 terraform apply
-```
 
-6. **API キーの取得**
-```bash
+# APIキー取得
 terraform output -raw api_key
 ```
+
+⚠️ **推奨**: `environments/dev/` または `environments/prod/` を使用してください
 
 ## セキュリティ注意事項
 
