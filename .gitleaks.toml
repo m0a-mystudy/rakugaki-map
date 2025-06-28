@@ -30,6 +30,10 @@ regexes = [
   '''example\.com''',
   '''localhost''',
   '''127\.0\.0\.1''',
+  '''firebaseConfig\.apiKey''',
+  '''✅ Set''',
+  '''❌ Missing''',
+  '''console\.log\('🔥 Firebase Config'''',
 ]
 
 # Paths to ignore

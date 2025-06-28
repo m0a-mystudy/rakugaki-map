@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
+import FirestoreTest from './components/FirestoreTest'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
 import type { DrawingTool, Shape } from './types'
 import './App.css'
@@ -35,7 +36,7 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const id = urlParams.get('id')
-    
+
     if (id) {
       setDrawingId(id)
       loadDrawingData(id)
@@ -61,14 +62,14 @@ function App() {
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map)
-    
+
     google.maps.event.addListener(map, 'center_changed', () => {
       const center = map.getCenter()
       if (center) {
         setCenter({ lat: center.lat(), lng: center.lng() })
       }
     })
-    
+
     google.maps.event.addListener(map, 'zoom_changed', () => {
       setZoom(map.getZoom() || 15)
     })
@@ -79,14 +80,25 @@ function App() {
   }, [])
 
   const handleSave = async () => {
-    if (!drawingId || shapes.length === 0) return
-    
+    console.log('🔥 Save button clicked', { drawingId, shapesCount: shapes.length })
+
+    if (!drawingId) {
+      console.error('❌ No drawing ID')
+      return
+    }
+
+    if (shapes.length === 0) {
+      console.warn('⚠️ No shapes to save')
+      return
+    }
+
     setIsSaving(true)
     try {
       await saveDrawing(drawingId, shapes, center, zoom)
-      console.log('Drawing saved successfully!')
+      alert('Drawing saved successfully!')
     } catch (error) {
       console.error('Failed to save drawing:', error)
+      alert(`Save failed: ${error}`)
     } finally {
       setIsSaving(false)
     }
@@ -128,8 +140,8 @@ function App() {
             options={options}
           />
           {map && (
-            <DrawingCanvas 
-              map={map} 
+            <DrawingCanvas
+              map={map}
               isDrawing={isDrawing}
               onDrawingChange={setIsDrawing}
               selectedColor={selectedColor}
@@ -142,36 +154,36 @@ function App() {
         </div>
       </LoadScript>
       <div className="controls">
-        <button 
+        <button
           className={`draw-button ${isDrawing ? 'active' : ''}`}
           onClick={() => setIsDrawing(!isDrawing)}
         >
           {isDrawing ? '描画を終了' : '描画を開始'}
         </button>
-        
+
         <div className="action-buttons">
-          <button 
+          <button
             className="action-button save"
             onClick={handleSave}
             disabled={isSaving || shapes.length === 0}
           >
             {isSaving ? '保存中...' : '保存'}
           </button>
-          <button 
+          <button
             className="action-button clear"
             onClick={handleClear}
             disabled={shapes.length === 0}
           >
             クリア
           </button>
-          <button 
+          <button
             className="action-button share"
             onClick={handleShare}
           >
             共有
           </button>
         </div>
-        
+
         {isDrawing && (
           <>
             <div className="tool-section">
@@ -236,6 +248,7 @@ function App() {
           </>
         )}
       </div>
+      <FirestoreTest />
     </div>
   )
 }
