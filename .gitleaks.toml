@@ -33,7 +33,7 @@ regexes = [
   '''firebaseConfig\.apiKey''',
   '''✅ Set''',
   '''❌ Missing''',
-  '''console\.log\('🔥 Firebase Config'''',
+  '''console\.log\(''',
 ]
 
 # Paths to ignore

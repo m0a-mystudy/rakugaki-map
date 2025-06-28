@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
-import FirestoreTest from './components/FirestoreTest'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
 import type { DrawingTool, Shape } from './types'
 import './App.css'
@@ -248,7 +247,6 @@ function App() {
           </>
         )}
       </div>
-      <FirestoreTest />
     </div>
   )
 }
