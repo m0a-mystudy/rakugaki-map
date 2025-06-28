@@ -43,7 +43,6 @@ USAGE:
     $0 <command> [options]
 
 COMMANDS:
-    backup          Create backup of current WIF configuration
     list-repos      List currently allowed repositories
     add-repo        Add repository to WIF configuration
     remove-repo     Remove repository from WIF configuration
@@ -76,9 +75,8 @@ EXAMPLES:
 SAFETY FEATURES:
     - All operations require explicit confirmation
     - Dry-run mode available for testing
-    - Automatic backup before changes
     - Validation of inputs and existing configuration
-    - Rollback instructions provided on failure
+    - Current settings always retrievable from GCP Console
 
 EOF
 }
@@ -100,7 +98,7 @@ validate_tools() {
 # Validate project access
 validate_project() {
     local project="$1"
-    
+
     if ! gcloud projects describe "$project" &> /dev/null; then
         print_error "Cannot access project '$project' or project doesn't exist"
         exit 1
@@ -110,7 +108,7 @@ validate_project() {
 # Get WIF pool and provider names based on environment
 get_wif_names() {
     local env="$1"
-    
+
     if [[ "$env" == "dev" ]]; then
         WIF_POOL="github-actions-pool"
         WIF_PROVIDER="github-provider"
@@ -123,58 +121,25 @@ get_wif_names() {
     fi
 }
 
-# Simple backup of critical WIF settings
-backup_wif_config() {
-    local project="$1"
-    local env="$2"
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-    local backup_dir="wif-backups"
-    
-    get_wif_names "$env"
-    
-    print_info "Creating lightweight backup of WIF configuration..."
-    
-    mkdir -p "$backup_dir"
-    
-    # Backup only the critical attribute condition
-    local condition=$(gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
-        --location=global \
-        --workload-identity-pool="$WIF_POOL" \
-        --project="$project" \
-        --format="value(attributeCondition)")
-    
-    # Save condition to simple text file
-    echo "# WIF Provider Condition Backup - ${env} environment" > "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "# Project: $project" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "# Timestamp: $timestamp" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "# Pool: $WIF_POOL" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "# Provider: $WIF_PROVIDER" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    echo "$condition" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
-    
-    print_success "Lightweight backup created: $backup_dir/wif-condition-${env}-${timestamp}.txt"
-    print_info "Backed up condition: $condition"
-    print_info "Note: Full configuration can be retrieved from GCP Console if needed"
-}
 
 # List currently allowed repositories
 list_repos() {
     local project="$1"
     local env="$2"
-    
+
     get_wif_names "$env"
-    
+
     print_info "Fetching current repository configuration..."
-    
+
     local condition=$(gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
         --location=global \
         --workload-identity-pool="$WIF_POOL" \
         --project="$project" \
         --format="value(attributeCondition)")
-    
+
     print_info "Current attribute condition:"
     echo "$condition"
-    
+
     print_info "Allowed repositories:"
     echo "$condition" | grep -oE "attribute\.repository=='[^']+'" | sed "s/attribute\.repository=='//g" | sed "s/'//g" || true
 }
@@ -183,18 +148,18 @@ list_repos() {
 show_config() {
     local project="$1"
     local env="$2"
-    
+
     get_wif_names "$env"
-    
+
     print_info "WIF Configuration for $project ($env environment):"
     echo ""
-    
+
     print_info "Workload Identity Pool:"
     gcloud iam workload-identity-pools describe "$WIF_POOL" \
         --location=global \
         --project="$project" \
         --format="table(name,displayName,description,state)"
-    
+
     echo ""
     print_info "Workload Identity Provider:"
     gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
@@ -209,57 +174,54 @@ add_repo() {
     local project="$1"
     local env="$2"
     local new_repo="$3"
-    
+
     get_wif_names "$env"
-    
+
     # Validate repository format
     if [[ ! "$new_repo" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
         print_error "Invalid repository format. Expected: owner/repo"
         exit 1
     fi
-    
+
     print_info "Adding repository '$new_repo' to WIF configuration..."
-    
+
     # Get current condition
     local current_condition=$(gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
         --location=global \
         --workload-identity-pool="$WIF_POOL" \
         --project="$project" \
         --format="value(attributeCondition)")
-    
+
     print_info "Current condition: $current_condition"
-    
+
     # Check if repository is already included
     if echo "$current_condition" | grep -q "attribute.repository=='$new_repo'"; then
         print_warning "Repository '$new_repo' is already allowed"
         return 0
     fi
-    
+
     # Create new condition
     local new_condition="${current_condition} || attribute.repository=='$new_repo'"
-    
+
     print_info "New condition will be: $new_condition"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         print_warning "DRY RUN: Would update WIF provider with new condition"
         return 0
     fi
-    
+
     # Confirm with user
     echo ""
     print_warning "This will modify the WIF provider configuration."
-    print_warning "Make sure you have created a backup first!"
+    print_info "Current setting can always be retrieved from GCP Console if needed."
     echo ""
     read -p "Do you want to continue? (yes/no): " confirm
-    
+
     if [[ "$confirm" != "yes" ]]; then
         print_info "Operation cancelled"
         return 0
     fi
-    
-    # Create backup first
-    backup_wif_config "$project" "$env"
-    
+
     # Update the provider
     print_info "Updating WIF provider..."
     gcloud iam workload-identity-pools providers update "$WIF_PROVIDER" \
@@ -267,7 +229,7 @@ add_repo() {
         --workload-identity-pool="$WIF_POOL" \
         --attribute-condition="$new_condition" \
         --project="$project"
-    
+
     print_success "Repository '$new_repo' has been added to WIF configuration"
     print_info "Please test GitHub Actions to ensure the configuration works correctly"
 }
@@ -276,11 +238,11 @@ add_repo() {
 list_permissions() {
     local project="$1"
     local env="$2"
-    
+
     local sa_email="github-actions-wif@${project}.iam.gserviceaccount.com"
-    
+
     print_info "Service Account Permissions for $sa_email:"
-    
+
     gcloud projects get-iam-policy "$project" \
         --flatten="bindings[].members" \
         --filter="bindings.members:$sa_email" \
@@ -328,20 +290,20 @@ parse_args() {
 main() {
     # Parse command line arguments
     parse_args "$@"
-    
+
     # Validate tools
     validate_tools
-    
+
     # Check if command is provided
     if [[ -z "$COMMAND" ]]; then
         print_error "No command specified"
         show_help
         exit 1
     fi
-    
+
     # Validate required arguments based on command
     case "$COMMAND" in
-        backup|list-repos|list-permissions|show-config)
+        list-repos|list-permissions|show-config)
             if [[ -z "$PROJECT_ID" || -z "$ENVIRONMENT" ]]; then
                 print_error "Project ID (-p) and environment (-e) are required"
                 exit 1
@@ -359,15 +321,12 @@ main() {
             exit 1
             ;;
     esac
-    
+
     # Validate project access
     validate_project "$PROJECT_ID"
-    
+
     # Execute command
     case "$COMMAND" in
-        backup)
-            backup_wif_config "$PROJECT_ID" "$ENVIRONMENT"
-            ;;
         list-repos)
             list_repos "$PROJECT_ID" "$ENVIRONMENT"
             ;;

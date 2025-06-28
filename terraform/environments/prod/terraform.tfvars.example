@@ -2,16 +2,26 @@
 # Copy this to terraform.tfvars and update with your values
 
 # GCP Project ID for production
-project_id = "your-project-prod"
+project_id = "the-rakugaki-map"
 
 # Region
 region = "asia-northeast1"
 
-# Billing account (if creating new project)
-# billing_account = "XXXXXX-XXXXXX-XXXXXX"
+# Billing account
+billing_account = "019580-0463A4-90F093"
 
 # Production domains for API key restrictions
 allowed_domains = [
-  "https://your-domain.com/*",
-  "https://www.your-domain.com/*"
+  "the-rakugaki-map.web.app",
+  "the-rakugaki-map.firebaseapp.com",
+  "rakugaki-map.web.app",
+  "rakugaki-map.firebaseapp.com"
 ]
+
+# Firebase configuration (will be auto-detected from GCP)
+firebase_api_key             = "placeholder"
+firebase_auth_domain         = "placeholder"
+firebase_storage_bucket      = "placeholder"
+firebase_messaging_sender_id = "placeholder"
+firebase_app_id              = "placeholder"
+firebase_ci_token            = "placeholder"

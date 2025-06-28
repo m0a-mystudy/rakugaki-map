@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env.local
+.env.production
 
 # Terraform sensitive files
 terraform.tfvars.local

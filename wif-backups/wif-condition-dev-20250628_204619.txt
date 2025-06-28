@@ -1,7 +1,0 @@
-# WIF Provider Condition Backup - dev environment
-# Project: rakugakimap-dev
-# Timestamp: 20250628_204619
-# Pool: github-actions-pool
-# Provider: github-provider
-
-attribute.repository=='m0a-mystudy/rakugaki-map'
