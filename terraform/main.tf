@@ -1,3 +1,6 @@
+# Core infrastructure that can be safely managed by CI/CD
+# This excludes WIF resources which are managed manually
+
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -23,9 +26,6 @@ variable "billing_account" {
   description = "Billing account ID (required only if creating new project)"
   type        = string
   default     = ""
-
-  # Format: 01234A-567890-BCDEF1
-  # Find yours: gcloud billing accounts list
 }
 
 variable "allowed_domains" {
@@ -91,45 +91,38 @@ provider "google" {
 # Enable required APIs
 resource "google_project_service" "apikeys" {
   service = "apikeys.googleapis.com"
-
   disable_on_destroy = false
 }
 
 resource "google_project_service" "maps_api" {
   service = "maps-backend.googleapis.com"
-
   disable_on_destroy = false
 }
 
 resource "google_project_service" "maps_js_api" {
   service = "maps-embed-backend.googleapis.com"
-
   disable_on_destroy = false
 }
 
 resource "google_project_service" "places_api" {
   service = "places-backend.googleapis.com"
-
   disable_on_destroy = false
 }
 
 # Firebase Authentication API
 resource "google_project_service" "firebase_auth" {
   service = "firebase.googleapis.com"
-
   disable_on_destroy = false
 }
 
 # Firebase Hosting API
 resource "google_project_service" "firebase_hosting" {
   service = "firebasehosting.googleapis.com"
-
   disable_on_destroy = false
 }
 
 resource "google_project_service" "identity_toolkit" {
   service = "identitytoolkit.googleapis.com"
-
   disable_on_destroy = false
 }
 
@@ -165,7 +158,6 @@ resource "google_apikeys_key" "maps_api_key" {
 # Firestore Database
 resource "google_project_service" "firestore" {
   service = "firestore.googleapis.com"
-
   disable_on_destroy = false
 }
 
@@ -217,13 +209,24 @@ resource "google_identity_platform_config" "auth_config" {
 # Firebase Management API
 resource "google_project_service" "firebase_management" {
   service = "firebase.googleapis.com"
-
   disable_on_destroy = false
 }
 
-# Note: Firebase Web App and Hosting Site need to be created manually
-# or via Firebase CLI due to Terraform provider limitations
-# Use: firebase init hosting
+# Include Secret Manager for CI/CD
+module "secrets" {
+  source = "./secrets"
+  
+  # Pass required variables
+  project_id                   = var.project_id
+  environment                  = "dev"
+  firebase_api_key            = var.firebase_api_key
+  firebase_auth_domain        = var.firebase_auth_domain
+  firebase_storage_bucket     = var.firebase_storage_bucket
+  firebase_messaging_sender_id = var.firebase_messaging_sender_id
+  firebase_app_id             = var.firebase_app_id
+  firebase_ci_token           = var.firebase_ci_token
+  google_maps_api_key         = google_apikeys_key.maps_api_key.key_string
+}
 
 # Outputs
 output "api_key" {
