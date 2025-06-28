@@ -49,7 +49,7 @@ jobs:
     if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
     strategy:
       matrix:
-        environment: [dev, prod]
+        environment: [dev]
 
     steps:
       - name: Checkout code
