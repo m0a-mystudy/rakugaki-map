@@ -66,6 +66,42 @@ terraform output -raw api_key
 terraform destroy
 ```
 
+## State管理
+
+### 現在の設定（ローカルState）
+- デフォルトではStateファイルはローカル（`terraform.tfstate`）に保存されます
+- `.gitignore`で除外されているため、Gitにはコミットされません
+- **個人開発や検証環境向け**
+
+### リモートState設定（推奨：チーム開発・本番環境）
+
+1. **State保存用のGCSバケット作成**
+```bash
+# state-bucket.tf のコメントを解除してバケットを作成
+terraform apply -target=google_storage_bucket.terraform_state
+```
+
+2. **backend.tf を編集**
+```hcl
+terraform {
+  backend "gcs" {
+    bucket  = "your-project-id-terraform-state"
+    prefix  = "rakugaki-map"
+  }
+}
+```
+
+3. **Stateの移行**
+```bash
+terraform init -migrate-state
+```
+
+### State管理のベストプラクティス
+- **開発環境**: ローカルStateでOK
+- **本番環境**: 必ずリモートState（GCS）を使用
+- **チーム開発**: リモートState + State Locking
+- **複数環境**: workspaceまたは異なるprefixを使用
+
 ## トラブルシューティング
 
 ### APIが有効化されない
@@ -74,3 +110,7 @@ terraform destroy
 
 ### Firestoreエラー
 - 同じプロジェクトで既にFirestoreが有効な場合、手動で削除が必要
+
+### State関連のエラー
+- ローカルStateが壊れた場合: `terraform.tfstate.backup` から復元
+- リモートStateへのアクセスエラー: GCS権限を確認
