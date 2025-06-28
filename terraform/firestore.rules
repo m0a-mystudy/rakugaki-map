@@ -5,7 +5,7 @@ service cloud.firestore {
     // 本番環境では認証を追加してください
     match /drawings/{documentId} {
       allow read: if true;
-      allow write: if true;  // 本番では: if request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 }
