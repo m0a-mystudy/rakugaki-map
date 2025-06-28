@@ -152,9 +152,9 @@ jobs:
             <details>
             <summary>Show Plan Output</summary>
 
-            \\\`\\\`\\\`terraform
-            ${planOutput.slice(0, 50000)}${planOutput.length > 50000 ? '\\n\\n... (truncated)' : ''}
-            \\\`\\\`\\\`
+            \`\`\`terraform
+            ${planOutput.slice(0, 50000)}${planOutput.length > 50000 ? '\n\n... (truncated)' : ''}
+            \`\`\`
 
             </details>
 
@@ -310,28 +310,28 @@ jobs:
             const emoji = environment === 'prod' ? '🚀' : '🧪';
             const envDisplay = environment === 'prod' ? 'Production' : 'Development';
 
-            let body = \`\${emoji} **Terraform Apply Successful - \${envDisplay}**
+            let body = `${emoji} **Terraform Apply Successful - ${envDisplay}**
 
-            **Environment**: \${envDisplay}
-            **Project ID**: \${projectId}
-            **Commit**: \\\`\${context.sha.substr(0, 7)}\\\`
+            **Environment**: ${envDisplay}
+            **Project ID**: ${projectId}
+            **Commit**: \`${context.sha.substr(0, 7)}\`
 
-            **Infrastructure Status**: ✅ Updated\`;
+            **Infrastructure Status**: ✅ Updated`;
 
             if (wifProvider && serviceAccount) {
-              body += \`
+              body += `
 
               **Workload Identity Configuration**:
-              - Provider: \\\`\${wifProvider}\\\`
-              - Service Account: \\\`\${serviceAccount}\\\`
+              - Provider: \`${wifProvider}\`
+              - Service Account: \`${serviceAccount}\`
 
-              ℹ️ Make sure to update GitHub repository variables with these values if they've changed.\`;
+              ℹ️ Make sure to update GitHub repository variables with these values if they've changed.`;
             }
 
-            body += \`
+            body += `
 
             ---
-            *Deployed via Terraform CI/CD*\`;
+            *Deployed via Terraform CI/CD*`;
 
             await github.rest.repos.createCommitComment({
               owner: context.repo.owner,
