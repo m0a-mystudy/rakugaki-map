@@ -31,31 +31,42 @@ npm install
    - [gcloud CLI](https://cloud.google.com/sdk/docs/install) のインストール
    - GCPプロジェクトの作成と請求先アカウントの設定
 
-2. **Terraformでのセットアップ**
+2. **環境別セットアップ**
+
+**開発環境:**
 ```bash
 # 認証
 gcloud auth application-default login
 
-# Terraform設定
-cd terraform
+# 開発環境設定
+cd terraform/environments/dev
 cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars を編集してproject_idを設定
 
-# 初回実行（State管理用バケット作成）
+# 実行
 terraform init
-terraform apply -target=google_storage_bucket.terraform_state
-
-# backend.tf を編集してバケット名を設定後、再初期化
-terraform init -migrate-state
-
-# 全リソース作成
 terraform apply
 
 # APIキーの取得
 terraform output -raw api_key
 ```
 
-詳細は [terraform/README.md](terraform/README.md) を参照
+**本番環境:**
+```bash
+# 本番環境設定
+cd terraform/environments/prod
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集（project_id, allowed_domains）
+
+# State設定
+terraform init -backend-config="bucket=your-prod-terraform-state"
+terraform apply
+
+# 本番APIキーの取得
+terraform output -raw api_key_prod
+```
+
+詳細は [terraform/README.md](terraform/README.md) および [terraform/environments/README.md](terraform/environments/README.md) を参照
 
 #### 手動セットアップ
 
@@ -125,8 +136,8 @@ service cloud.firestore {
 `.env.local` ファイルを作成し、以下の値を設定：
 
 ```bash
-# Google Maps API
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+# Google Maps API (Terraformで作成したキーを使用)
+VITE_GOOGLE_MAPS_API_KEY=your_terraform_generated_api_key
 
 # Firebase Configuration
 VITE_FIREBASE_API_KEY=your_firebase_api_key
@@ -138,9 +149,19 @@ VITE_FIREBASE_APP_ID=your_firebase_app_id
 ```
 
 **設定値の取得方法:**
-- Firebase Console → プロジェクト設定 → 「全般」タブ
-- 「マイアプリ」セクションでWebアプリを選択
-- 「構成」に表示される値をコピー
+
+1. **Google Maps API Key**: 
+   ```bash
+   # 開発環境
+   cd terraform/environments/dev
+   terraform output -raw api_key
+   
+   # 本番環境
+   cd terraform/environments/prod
+   terraform output -raw api_key_prod
+   ```
+
+2. **Firebase設定**: Firebase Console → プロジェクト設定 → 「全般」タブ → 「マイアプリ」→「構成」
 
 ### 5. 開発サーバーの起動
 
@@ -149,6 +170,17 @@ npm run dev
 ```
 
 http://localhost:5173 でアプリケーションにアクセスできます。
+
+### 6. 環境別デプロイ用APIキーの使い分け
+
+- **開発環境**: `localhost` 制限のAPIキー（セキュアで開発に最適）
+- **本番環境**: 指定ドメイン制限のAPIキー（本番サイト用）
+
+```bash
+# 本番デプロイ時の環境変数設定例
+export VITE_GOOGLE_MAPS_API_KEY=$(cd terraform/environments/prod && terraform output -raw api_key_prod)
+npm run build
+```
 
 ## 本番デプロイ
 
