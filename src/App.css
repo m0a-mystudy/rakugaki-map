@@ -150,11 +150,19 @@ h3 {
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  /* Prevent text selection on headers */
+  /* Prevent text selection on headers except for slider value */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* Allow text selection for slider value display */
+.width-section h3 {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 .tool-buttons {
