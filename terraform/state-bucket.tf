@@ -21,10 +21,8 @@ resource "google_storage_bucket" "terraform_state" {
     }
   }
   
-  # Enable encryption with Google-managed keys
-  encryption {
-    default_kms_key_name = null  # Uses Google-managed encryption
-  }
+  # Google-managed encryption is enabled by default
+  # No explicit encryption block needed
 }
 
 output "state_bucket_name" {
