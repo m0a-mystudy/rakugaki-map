@@ -1,0 +1,87 @@
+# Firebase Configuration Data Sources
+# Automatically fetch Firebase configuration from GCP
+
+# Get Firebase project configuration
+data "google_firebase_web_app_config" "default" {
+  web_app_id = var.firebase_web_app_id
+}
+
+# Get Firebase project information
+data "google_firebase_project" "default" {
+  project = var.project_id
+}
+
+# Variables that need to be provided (fallback when auto-detection fails)
+variable "firebase_web_app_id" {
+  description = "Firebase Web App ID (get from Firebase Console)"
+  type        = string
+  default     = null
+}
+
+variable "firebase_api_key" {
+  description = "Firebase API Key (fallback)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "firebase_auth_domain" {
+  description = "Firebase Auth Domain (fallback)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "firebase_storage_bucket" {
+  description = "Firebase Storage Bucket (fallback)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "firebase_messaging_sender_id" {
+  description = "Firebase Messaging Sender ID (fallback)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "firebase_app_id" {
+  description = "Firebase App ID (fallback)"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "firebase_ci_token" {
+  description = "Firebase CI Token for deployments"
+  type        = string
+  sensitive   = true
+}
+
+# Create a local that combines auto-detected and required values
+locals {
+  firebase_config = {
+    api_key             = data.google_firebase_web_app_config.default.api_key
+    auth_domain         = data.google_firebase_web_app_config.default.auth_domain
+    project_id          = var.project_id
+    storage_bucket      = data.google_firebase_web_app_config.default.storage_bucket
+    messaging_sender_id = data.google_firebase_web_app_config.default.messaging_sender_id
+    app_id              = data.google_firebase_web_app_config.default.app_id
+    ci_token            = var.firebase_ci_token
+  }
+}
+
+# Outputs for verification
+output "firebase_config" {
+  value = {
+    api_key             = local.firebase_config.api_key
+    auth_domain         = local.firebase_config.auth_domain
+    project_id          = local.firebase_config.project_id
+    storage_bucket      = local.firebase_config.storage_bucket
+    messaging_sender_id = local.firebase_config.messaging_sender_id
+    app_id              = local.firebase_config.app_id
+  }
+  sensitive   = true
+  description = "Firebase configuration (auto-detected from project)"
+}
