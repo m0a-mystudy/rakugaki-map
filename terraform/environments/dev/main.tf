@@ -34,15 +34,64 @@ variable "allowed_domains" {
   default     = ["localhost:*", "localhost", "127.0.0.1:*", "127.0.0.1"]
 }
 
+# Firebase variables (fallback values for CI/CD)
+variable "firebase_api_key" {
+  description = "Firebase API Key"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_auth_domain" {
+  description = "Firebase Auth Domain"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_storage_bucket" {
+  description = "Firebase Storage Bucket"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_messaging_sender_id" {
+  description = "Firebase Messaging Sender ID"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_app_id" {
+  description = "Firebase App ID"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_ci_token" {
+  description = "Firebase CI Token for deployments"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
 # Use the main module
 module "rakugaki_map" {
   source = "../../"
 
-  project_id      = var.project_id
-  region          = var.region
-  billing_account = var.billing_account
-  allowed_domains = var.allowed_domains
-  environment     = "dev"
+  project_id                     = var.project_id
+  region                        = var.region
+  billing_account               = var.billing_account
+  allowed_domains               = var.allowed_domains
+  environment                   = "dev"
+  firebase_api_key             = var.firebase_api_key
+  firebase_auth_domain         = var.firebase_auth_domain
+  firebase_storage_bucket      = var.firebase_storage_bucket
+  firebase_messaging_sender_id = var.firebase_messaging_sender_id
+  firebase_app_id              = var.firebase_app_id
+  firebase_ci_token            = var.firebase_ci_token
 }
 
 # Outputs

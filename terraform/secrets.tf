@@ -20,8 +20,8 @@ resource "google_secret_manager_secret" "firebase_api_key" {
 
 resource "google_secret_manager_secret_version" "firebase_api_key" {
   secret      = google_secret_manager_secret.firebase_api_key.id
-  # Placeholder value - will be updated by application deployment
-  secret_data = "placeholder" # pragma: allowlist secret # pragma: allowlist secret
+  # Value provided via CI/CD or local tfvars
+  secret_data = var.firebase_api_key
 }
 
 resource "google_secret_manager_secret" "firebase_auth_domain" {
@@ -36,7 +36,7 @@ resource "google_secret_manager_secret" "firebase_auth_domain" {
 
 resource "google_secret_manager_secret_version" "firebase_auth_domain" {
   secret      = google_secret_manager_secret.firebase_auth_domain.id
-  secret_data = "placeholder" # pragma: allowlist secret
+  secret_data = var.firebase_auth_domain
 }
 
 resource "google_secret_manager_secret" "firebase_storage_bucket" {
@@ -51,7 +51,7 @@ resource "google_secret_manager_secret" "firebase_storage_bucket" {
 
 resource "google_secret_manager_secret_version" "firebase_storage_bucket" {
   secret      = google_secret_manager_secret.firebase_storage_bucket.id
-  secret_data = "placeholder" # pragma: allowlist secret
+  secret_data = var.firebase_storage_bucket
 }
 
 resource "google_secret_manager_secret" "firebase_messaging_sender_id" {
@@ -66,7 +66,7 @@ resource "google_secret_manager_secret" "firebase_messaging_sender_id" {
 
 resource "google_secret_manager_secret_version" "firebase_messaging_sender_id" {
   secret      = google_secret_manager_secret.firebase_messaging_sender_id.id
-  secret_data = "placeholder" # pragma: allowlist secret
+  secret_data = var.firebase_messaging_sender_id
 }
 
 resource "google_secret_manager_secret" "firebase_app_id" {
@@ -81,7 +81,7 @@ resource "google_secret_manager_secret" "firebase_app_id" {
 
 resource "google_secret_manager_secret_version" "firebase_app_id" {
   secret      = google_secret_manager_secret.firebase_app_id.id
-  secret_data = "placeholder" # pragma: allowlist secret
+  secret_data = var.firebase_app_id
 }
 
 # Google Maps API Key
@@ -109,7 +109,7 @@ resource "google_secret_manager_secret" "firebase_token" {
 
 resource "google_secret_manager_secret_version" "firebase_token" {
   secret      = google_secret_manager_secret.firebase_token.id
-  secret_data = "placeholder" # pragma: allowlist secret
+  secret_data = var.firebase_ci_token
 }
 
 # Variables for sensitive data
