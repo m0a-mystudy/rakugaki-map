@@ -27,6 +27,7 @@ function DrawingCanvas({
   const [isMouseDown, setIsMouseDown] = useState(false)
   const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number, pressure?: number}[]>([])
   const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
+  const [activePointerId, setActivePointerId] = useState<number | null>(null)
   const shapesRef = useRef<Shape[]>([])
 
   useEffect(() => {
@@ -210,20 +211,29 @@ function DrawingCanvas({
     const rect = canvasRef.current?.getBoundingClientRect()
     if (!rect) return null
 
-    let clientX: number, clientY: number, pressure = 0.5
+    let clientX: number, clientY: number, pressure = 0.5, pointerId: number | null = null, type: 'mouse' | 'pen' | 'touch' = 'mouse'
 
-    if ('clientX' in e) {
+    if ('pointerId' in e) {
+      // PointerEvent - iPad Pencil support
       clientX = e.clientX
       clientY = e.clientY
-      if ('pressure' in e) {
-        pressure = e.pressure || 0.5
-      }
+      pressure = e.pressure || 0.5
+      pointerId = e.pointerId
+      type = e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse'
+    } else if ('clientX' in e) {
+      // MouseEvent
+      clientX = e.clientX
+      clientY = e.clientY
+      pressure = 0.5
+      type = 'mouse'
     } else if ('touches' in e && e.touches.length > 0) {
+      // TouchEvent
       clientX = e.touches[0].clientX
       clientY = e.touches[0].clientY
       if ('force' in e.touches[0]) {
         pressure = (e.touches[0] as any).force || 0.5
       }
+      type = 'touch'
     } else {
       return null
     }
@@ -231,29 +241,73 @@ function DrawingCanvas({
     return {
       x: clientX - rect.left,
       y: clientY - rect.top,
-      pressure
+      pressure,
+      pointerId,
+      type
     }
   }
 
-  const handleStart = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const handlePointerStart = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
 
-    e.preventDefault()
-    setIsMouseDown(true)
+    // Prioritize pen input over touch
+    if (activePointerId !== null && e.pointerType !== 'pen') {
+      return // Another pointer is already active
+    }
 
+    e.preventDefault()
     const coords = getEventCoordinates(e)
     if (!coords) return
 
+    setActivePointerId(coords.pointerId)
+    setIsMouseDown(true)
+    setStartPoint({x: coords.x, y: coords.y})
+    setCurrentPixelLine([coords])
+
+    // Capture pointer to ensure we get all events
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || activePointerId !== null) return // Don't handle if pointer is active
+
+    e.preventDefault()
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    setIsMouseDown(true)
     setStartPoint({x: coords.x, y: coords.y})
     setCurrentPixelLine([coords])
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    handleStart(e)
+    if (!isDrawing || activePointerId !== null) return // Don't handle if pointer is active
+
+    e.preventDefault()
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    setIsMouseDown(true)
+    setStartPoint({x: coords.x, y: coords.y})
+    setCurrentPixelLine([coords])
   }
 
-  const handleMove = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isMouseDown) return
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isMouseDown || activePointerId !== e.pointerId) return
+
+    e.preventDefault()
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    if (selectedTool === 'pen') {
+      setCurrentPixelLine(prev => [...prev, coords])
+    } else {
+      setCurrentPixelLine([startPoint!, coords])
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isMouseDown || activePointerId !== null) return
 
     e.preventDefault()
     const coords = getEventCoordinates(e)
@@ -267,13 +321,24 @@ function DrawingCanvas({
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    handleMove(e)
+    if (!isDrawing || !isMouseDown || activePointerId !== null) return
+
+    e.preventDefault()
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    if (selectedTool === 'pen') {
+      setCurrentPixelLine(prev => [...prev, coords])
+    } else {
+      setCurrentPixelLine([startPoint!, coords])
+    }
   }
 
   const handleEnd = () => {
     if (!isDrawing || !isMouseDown || !startPoint) return
 
     setIsMouseDown(false)
+    setActivePointerId(null)
 
     if (currentPixelLine.length > 1) {
       const latLngPoints: { lat: number; lng: number; pressure?: number }[] = []
@@ -320,7 +385,19 @@ function DrawingCanvas({
     setStartPoint(null)
   }
 
+  const handlePointerEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerId !== e.pointerId) return
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    handleEnd()
+  }
+
+  const handleTouchEnd = () => {
+    if (activePointerId !== null) return // Don't handle if pointer is active
+    handleEnd()
+  }
+
   const handleMouseUp = () => {
+    if (activePointerId !== null) return // Don't handle if pointer is active
     handleEnd()
   }
 
@@ -332,13 +409,13 @@ function DrawingCanvas({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onPointerDown={handleStart}
-      onPointerMove={handleMove}
-      onPointerUp={handleEnd}
-      onPointerLeave={handleEnd}
-      onTouchStart={handleStart}
-      onTouchMove={handleMove}
-      onTouchEnd={handleEnd}
+      onPointerDown={handlePointerStart}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerLeave={handlePointerEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{ touchAction: 'none' }}
     />
   )
