@@ -12,7 +12,7 @@ if [ -z "$PROJECT_ID" ]; then
     exit 1
 fi
 
-echo "Getting Firebase configuration for project: $PROJECT_ID"
+# Getting Firebase configuration for project: $PROJECT_ID
 
 # Set the Firebase project
 firebase use "$PROJECT_ID" >/dev/null 2>&1 || {
@@ -53,5 +53,5 @@ echo "$CONFIG" | grep -E "(apiKey|authDomain|projectId|storageBucket|messagingSe
     esac
 done
 
-echo "# To use these values in Terraform, run:"
-echo "# source <(./get-firebase-config.sh $PROJECT_ID)"
+# To use these values in Terraform, run:
+# source <(./get-firebase-config.sh $PROJECT_ID)
