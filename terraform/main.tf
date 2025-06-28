@@ -39,48 +39,8 @@ variable "allowed_domains" {
   ]
 }
 
-# Firebase variables (for secrets management)
-variable "firebase_api_key" {
-  description = "Firebase API Key"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
-
-variable "firebase_auth_domain" {
-  description = "Firebase Auth Domain"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
-
-variable "firebase_storage_bucket" {
-  description = "Firebase Storage Bucket"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
-
-variable "firebase_messaging_sender_id" {
-  description = "Firebase Messaging Sender ID"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
-
-variable "firebase_app_id" {
-  description = "Firebase App ID"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
-
-variable "firebase_ci_token" {
-  description = "Firebase CI Token for deployments"
-  type        = string
-  sensitive   = true
-  default     = "placeholder"
-}
+# Firebase configuration is managed via Secret Manager
+# No Terraform variables needed - accessed directly via gcloud in CI/CD
 
 provider "google" {
   project               = var.project_id
@@ -212,21 +172,8 @@ resource "google_project_service" "firebase_management" {
   disable_on_destroy = false
 }
 
-# Include Secret Manager for CI/CD
-module "secrets" {
-  source = "./secrets"
-
-  # Pass required variables
-  project_id                   = var.project_id
-  environment                  = "dev"
-  firebase_api_key            = var.firebase_api_key
-  firebase_auth_domain        = var.firebase_auth_domain
-  firebase_storage_bucket     = var.firebase_storage_bucket
-  firebase_messaging_sender_id = var.firebase_messaging_sender_id
-  firebase_app_id             = var.firebase_app_id
-  firebase_ci_token           = var.firebase_ci_token
-  maps_api_key_value          = google_apikeys_key.maps_api_key.key_string
-}
+# Secret Manager resources are managed manually
+# Secrets are accessed via gcloud commands in CI/CD workflows
 
 # Outputs
 output "api_key" {
