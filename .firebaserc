@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "rakugakimap-dev"
+    "default": "rakugakimap-dev",
+    "dev": "rakugakimap-dev",
+    "prod": "rakugakimap-prod"
   }
 }

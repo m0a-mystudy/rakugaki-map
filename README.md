@@ -11,6 +11,7 @@
 - 💾 描画データの保存（Firebase Firestore）
 - 🔗 共有リンク生成
 - 📱 レスポンシブデザイン
+- 🔒 セキュアなアクセス制御（読み取り全員、編集は認証済みユーザーのみ）
 
 ## セットアップ
 
@@ -122,11 +123,15 @@ service cloud.firestore {
 }
 ```
 
-#### 3.4 Authentication の設定（将来の拡張用）
+#### 3.4 Authentication の設定
 
+**Terraformでセットアップ済みの場合**: 匿名認証が自動で有効化されています
+
+**手動セットアップの場合**:
 1. Firebase Console で「Authentication」を選択
 2. 「始める」をクリック
-3. 「Sign-in method」タブで必要な認証方式を有効化
+3. 「Sign-in method」タブで「匿名」を有効化（必須）
+4. その他の認証方式も必要に応じて有効化
    - Google
    - メール/パスワード
    - など
@@ -184,28 +189,81 @@ npm run build
 
 ## 本番デプロイ
 
-### Firebase Hosting を使用する場合
+### 🤖 CI/CD 自動デプロイ（推奨）
 
-1. Firebase CLI のインストール:
+**GitHub Actions による自動デプロイ:**
+- **mainブランチにプッシュ** → 自動で**開発環境**デプロイ
+- **タグ作成 (v*.*.*)** → 自動で**本番環境**デプロイ
+- **Pull Request作成** → 自動でプレビューデプロイ（7日間）
+
+**初回セットアップ:**
+```bash
+# 開発環境CI/CDセットアップ
+bash scripts/setup-cicd.sh dev
+
+# 本番環境CI/CDセットアップ
+bash scripts/setup-cicd.sh prod
+
+# GitHub Secretsに表示された値を設定（_DEV/_PRODサフィックス付き）
+# 詳細は CICD_SETUP.md を参照
+```
+
+**デプロイ方法:**
+```bash
+# 開発環境へデプロイ
+git push origin main
+
+# 本番環境へデプロイ
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### 🚀 手動デプロイ
+
+**ワンコマンドデプロイ:**
+```bash
+# 開発環境へデプロイ
+npm run deploy:dev
+
+# 本番環境へデプロイ  
+npm run deploy:prod
+```
+
+デプロイスクリプトが以下を自動実行します：
+- ✅ Firebase CLIログイン確認
+- ✅ 環境変数チェック
+- ✅ アプリケーションビルド
+- ✅ Firebase Hostingデプロイ
+- ✅ デプロイURL表示
+
+### 🔧 手動セットアップ（初回のみ）
+
+**Firebase CLI インストール:**
 ```bash
 npm install -g firebase-tools
 ```
 
-2. Firebase にログイン:
+**Firebase初期化:**
 ```bash
 firebase login
-```
-
-3. Firebase プロジェクトの初期化:
-```bash
 firebase init hosting
 ```
 
-4. ビルドとデプロイ:
+### 📊 デプロイ後の作業
+
+**1. APIキー制限の更新:**
 ```bash
-npm run build
-firebase deploy
+# デプロイURL取得
+cd terraform/environments/dev
+terraform output hosting_url
+
+# API制限を本番URLに更新
+npm run api:update-restrictions dev https://rakugakimap-dev.web.app
 ```
+
+**2. 手動でのAPIキー制限更新:**
+- [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → APIキー
+- HTTPリファラー制限に本番ドメインを追加
 
 ### その他のホスティングサービス
 
@@ -215,6 +273,33 @@ npm run build
 ```
 
 2. `dist/` フォルダの内容をホスティングサービスにアップロード
+
+## セキュリティ仕様
+
+このアプリケーションは以下のセキュリティモデルを採用しています：
+
+### アクセス制御
+- **読み取り**: 誰でも落書きマップを閲覧可能
+- **書き込み**: 認証済みユーザーのみ編集可能
+- **認証方式**: Firebase匿名認証（自動で認証される）
+
+### Firestore セキュリティルール
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /drawings/{documentId} {
+      allow read: if true;                    // 全員が読み取り可能
+      allow write: if request.auth != null;  // 認証済みユーザーのみ書き込み可能
+    }
+  }
+}
+```
+
+### 実装詳細
+- 初回保存時に自動で匿名認証を実行
+- 認証状態はセッション中保持される
+- Terraformで一貫したセキュリティ設定を管理
 
 ## 料金について
 
@@ -235,8 +320,9 @@ npm run build
 - ブラウザの開発者ツールでエラーメッセージを確認
 
 ### 保存機能が動作しない（permission-denied エラー）
-- **最も一般的**: [Firestore設定手順](./FIRESTORE_SETUP.md) を確認してセキュリティルールを設定
-- Firebase設定が正しいか確認
+- **Terraformユーザー**: 全ての設定が自動で完了しているはずです
+- **手動セットアップユーザー**: [Firestore設定手順](./FIRESTORE_SETUP.md) を確認してセキュリティルールを設定
+- Firebase Authentication で匿名認証が有効になっているか確認
 - Firestore Database が作成されているか確認
 - ブラウザの開発者ツールでネットワークエラーを確認
 
@@ -244,6 +330,8 @@ npm run build
 - Firebase Hosting を使用するか、適切なCORS設定を行う
 
 ## 開発
+
+### 🛠️ 開発コマンド
 
 ```bash
 # 開発サーバー起動
@@ -254,7 +342,39 @@ npm run build
 
 # プレビュー
 npm run preview
+
+# デプロイ
+npm run deploy:dev
 ```
+
+### 🚀 デプロイコマンド
+
+```bash
+# 開発環境デプロイ
+npm run deploy:dev
+
+# 本番環境デプロイ
+npm run deploy:prod
+
+# ホスティングのみデプロイ
+npm run hosting:deploy
+
+# APIキー制限更新
+npm run api:update-restrictions dev https://your-domain.web.app
+
+# CI/CD セットアップ
+bash scripts/setup-cicd.sh
+```
+
+### 🤖 CI/CD ワークフロー
+
+**利用可能なワークフロー:**
+- `.github/workflows/deploy.yml`: メイン自動デプロイ
+- `.github/workflows/security.yml`: セキュリティチェック
+
+**ワークフロー状況確認:**
+- GitHub Actions タブでデプロイ状況を確認
+- エラー時は詳細ログを確認
 
 ## ライセンス
 

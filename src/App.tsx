@@ -125,10 +125,11 @@ function App() {
       alert('Drawing saved successfully!')
     } catch (error) {
       console.error('Failed to save drawing:', error)
-      if (error.toString().includes('permission-denied')) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('permission-denied')) {
         alert('保存権限がありません。認証が必要です。')
       } else {
-        alert(`Save failed: ${error}`)
+        alert(`Save failed: ${errorMessage}`)
       }
     } finally {
       setIsSaving(false)

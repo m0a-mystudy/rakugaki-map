@@ -31,6 +31,11 @@ This is a map-based drawing application where users can draw on Google Maps and 
    - Each drawing has a random ID used in the share URL
    - No real-time sync yet - manual save button only
 
+4. **Security Model**: Anonymous Authentication + Firestore Rules
+   - Anonymous authentication enabled for edit permissions
+   - Firestore rules: read access for everyone, write access for authenticated users only
+   - Configured via Terraform for consistent deployment
+
 ### Component Relationships
 
 ```
@@ -40,16 +45,17 @@ App.tsx
 └── UI Controls (tools, colors, actions)
 ```
 
-- **App.tsx**: Orchestrates all state, handles Firebase operations
+- **App.tsx**: Orchestrates all state, handles Firebase operations and authentication
 - **DrawingCanvas.tsx**: Manages drawing logic and coordinate transformations
 - **drawingService.ts**: Abstracts Firestore operations
+- **firebase.ts**: Handles Firebase initialization and anonymous authentication
 
 ### Drawing Data Flow
 
 1. User draws on canvas → Mouse events captured in pixel coordinates
 2. Pixels converted to lat/lng using Google Maps projection
 3. Shape objects created with geographic coordinates
-4. On save: Shape[] → Firestore document
+4. On save: Anonymous authentication → Shape[] → Firestore document (with auth check)
 5. On load: Firestore → Shape[] → Canvas redraw with lat/lng → pixel conversion
 
 ### Environment Setup Requirements
@@ -69,11 +75,47 @@ VITE_FIREBASE_APP_ID=xxx
 
 Without these, the app will load but maps won't display and saving won't work.
 
+### Security Implementation
+
+The application implements a secure access model:
+
+1. **Anonymous Authentication**: Automatically signs in users anonymously on first save
+2. **Firestore Security Rules**: Enforced at database level
+   ```javascript
+   // drawings collection: read for everyone, write for authenticated users only
+   match /drawings/{documentId} {
+     allow read: if true;
+     allow write: if request.auth != null;
+   }
+   ```
+3. **Terraform Management**: All security settings deployed via Infrastructure as Code
+
+### Deployment & Hosting
+
+The application supports both manual and automated deployment to Firebase Hosting:
+
+1. **CI/CD Pipeline**: GitHub Actions for automated deployment
+   - Main branch push → Production deployment
+   - Pull Request → Preview deployment (7-day expiry)
+   - Automated security checks and build validation
+
+2. **Firebase Hosting**: Configured via `firebase.json` for SPA routing and caching
+3. **Manual deployment**: `scripts/deploy.sh` handles build and deployment
+4. **API key restrictions**: Automatic domain restriction updates for production
+5. **Environment separation**: dev/prod configurations with separate hosting URLs
+
+### CI/CD Architecture
+
+- **Workflow file**: `.github/workflows/deploy.yml`
+- **Service account**: Firebase Admin access via GitHub Secrets
+- **Security**: All credentials stored in GitHub Secrets
+- **Preview deployments**: Temporary channels for PR review
+
 ### Current Limitations & Future Work
 
 1. **No auto-save**: Users must manually click save
-2. **No real-time collaboration**: Uses Firestore but not real-time listeners
-3. **No user authentication**: Auth is configured but not implemented
+2. **No real-time collaboration**: Uses Firestore but not real-time listeners  
+3. **Anonymous-only authentication**: Could add Google/GitHub login for persistent identity
 4. **No drawing deletion**: Can only clear all or nothing
 5. **Bundle size**: Firebase adds ~200KB to bundle
 
