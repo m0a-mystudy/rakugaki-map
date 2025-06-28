@@ -13,9 +13,9 @@ interface DrawingCanvasProps {
   onShapesChange: (shapes: Shape[]) => void
 }
 
-function DrawingCanvas({ 
-  map, 
-  isDrawing, 
+function DrawingCanvas({
+  map,
+  isDrawing,
   selectedColor,
   selectedTool,
   lineWidth,
@@ -25,7 +25,7 @@ function DrawingCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<google.maps.OverlayView | null>(null)
   const [isMouseDown, setIsMouseDown] = useState(false)
-  const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number}[]>([])
+  const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number, pressure?: number}[]>([])
   const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
   const shapesRef = useRef<Shape[]>([])
 
@@ -70,7 +70,7 @@ function DrawingCanvas({
           if (shape.type === 'pen' && shape.points.length > 1) {
             ctx.beginPath()
             let firstPoint = true
-            shape.points.forEach(point => {
+            shape.points.forEach((point) => {
               const latLng = new google.maps.LatLng(point.lat, point.lng)
               const pixel = projection.fromLatLngToContainerPixel(latLng)
               if (pixel) {
@@ -78,6 +78,11 @@ function DrawingCanvas({
                   ctx.moveTo(pixel.x, pixel.y)
                   firstPoint = false
                 } else {
+                  if (point.pressure !== undefined) {
+                    const pressure = point.pressure
+                    const dynamicWidth = shape.width * (0.3 + pressure * 0.7)
+                    ctx.lineWidth = dynamicWidth
+                  }
                   ctx.lineTo(pixel.x, pixel.y)
                 }
               }
@@ -136,6 +141,9 @@ function DrawingCanvas({
             ctx.beginPath()
             ctx.moveTo(currentPixelLine[0].x, currentPixelLine[0].y)
             for (let i = 1; i < currentPixelLine.length; i++) {
+              const pressure = currentPixelLine[i].pressure || 0.5
+              const dynamicWidth = lineWidth * (0.3 + pressure * 0.7)
+              ctx.lineWidth = dynamicWidth
               ctx.lineTo(currentPixelLine[i].x, currentPixelLine[i].y)
             }
             ctx.stroke()
@@ -198,51 +206,86 @@ function DrawingCanvas({
     return projection.fromContainerPixelToLatLng(point)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return
-    
-    setIsMouseDown(true)
+  const getEventCoordinates = (e: React.MouseEvent | React.PointerEvent | React.TouchEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
+    if (!rect) return null
 
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    
-    setStartPoint({x, y})
-    setCurrentPixelLine([{x, y}])
-  }
+    let clientX: number, clientY: number, pressure = 0.5
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isMouseDown) return
-
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    
-    if (selectedTool === 'pen') {
-      setCurrentPixelLine(prev => [...prev, {x, y}])
+    if ('clientX' in e) {
+      clientX = e.clientX
+      clientY = e.clientY
+      if ('pressure' in e) {
+        pressure = e.pressure || 0.5
+      }
+    } else if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+      if ('force' in e.touches[0]) {
+        pressure = (e.touches[0] as any).force || 0.5
+      }
     } else {
-      setCurrentPixelLine([startPoint!, {x, y}])
+      return null
+    }
+
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+      pressure
     }
   }
 
-  const handleMouseUp = () => {
+  const handleStart = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return
+
+    e.preventDefault()
+    setIsMouseDown(true)
+
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    setStartPoint({x: coords.x, y: coords.y})
+    setCurrentPixelLine([coords])
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    handleStart(e)
+  }
+
+  const handleMove = (e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !isMouseDown) return
+
+    e.preventDefault()
+    const coords = getEventCoordinates(e)
+    if (!coords) return
+
+    if (selectedTool === 'pen') {
+      setCurrentPixelLine(prev => [...prev, coords])
+    } else {
+      setCurrentPixelLine([startPoint!, coords])
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    handleMove(e)
+  }
+
+  const handleEnd = () => {
     if (!isDrawing || !isMouseDown || !startPoint) return
 
     setIsMouseDown(false)
-    
+
     if (currentPixelLine.length > 1) {
-      const latLngPoints: { lat: number; lng: number }[] = []
-      
+      const latLngPoints: { lat: number; lng: number; pressure?: number }[] = []
+
       if (selectedTool === 'pen') {
         currentPixelLine.forEach(pixel => {
           const latLng = pixelToLatLng(pixel.x, pixel.y)
           if (latLng) {
             latLngPoints.push({
               lat: latLng.lat(),
-              lng: latLng.lng()
+              lng: latLng.lng(),
+              pressure: pixel.pressure
             })
           }
         })
@@ -250,7 +293,7 @@ function DrawingCanvas({
         const startLatLng = pixelToLatLng(startPoint.x, startPoint.y)
         const endPixel = currentPixelLine[currentPixelLine.length - 1]
         const endLatLng = pixelToLatLng(endPixel.x, endPixel.y)
-        
+
         if (startLatLng && endLatLng) {
           latLngPoints.push({
             lat: startLatLng.lat(),
@@ -272,9 +315,13 @@ function DrawingCanvas({
         onShapesChange([...shapes, newShape])
       }
     }
-    
+
     setCurrentPixelLine([])
     setStartPoint(null)
+  }
+
+  const handleMouseUp = () => {
+    handleEnd()
   }
 
   return (
@@ -285,6 +332,14 @@ function DrawingCanvas({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onPointerDown={handleStart}
+      onPointerMove={handleMove}
+      onPointerUp={handleEnd}
+      onPointerLeave={handleEnd}
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      style={{ touchAction: 'none' }}
     />
   )
 }
