@@ -20,9 +20,12 @@ variable "region" {
 }
 
 variable "billing_account" {
-  description = "Billing account ID (required for new projects)"
+  description = "Billing account ID (required only if creating new project)"
   type        = string
   default     = ""
+  
+  # Format: 01234A-567890-BCDEF1
+  # Find yours: gcloud billing accounts list
 }
 
 provider "google" {
