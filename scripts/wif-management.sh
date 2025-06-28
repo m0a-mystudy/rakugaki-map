@@ -123,7 +123,7 @@ get_wif_names() {
     fi
 }
 
-# Backup WIF configuration
+# Simple backup of critical WIF settings
 backup_wif_config() {
     local project="$1"
     local env="$2"
@@ -132,32 +132,29 @@ backup_wif_config() {
     
     get_wif_names "$env"
     
-    print_info "Creating backup of WIF configuration..."
+    print_info "Creating lightweight backup of WIF configuration..."
     
     mkdir -p "$backup_dir"
     
-    # Backup WIF Pool
-    gcloud iam workload-identity-pools describe "$WIF_POOL" \
-        --location=global \
-        --project="$project" \
-        --format=json > "$backup_dir/wif-pool-${env}-${timestamp}.json"
-    
-    # Backup WIF Provider
-    gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
+    # Backup only the critical attribute condition
+    local condition=$(gcloud iam workload-identity-pools providers describe "$WIF_PROVIDER" \
         --location=global \
         --workload-identity-pool="$WIF_POOL" \
         --project="$project" \
-        --format=json > "$backup_dir/wif-provider-${env}-${timestamp}.json"
+        --format="value(attributeCondition)")
     
-    # Backup IAM Policy
-    gcloud projects get-iam-policy "$project" \
-        --format=json > "$backup_dir/iam-policy-${project}-${timestamp}.json"
+    # Save condition to simple text file
+    echo "# WIF Provider Condition Backup - ${env} environment" > "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "# Project: $project" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "# Timestamp: $timestamp" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "# Pool: $WIF_POOL" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "# Provider: $WIF_PROVIDER" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
+    echo "$condition" >> "$backup_dir/wif-condition-${env}-${timestamp}.txt"
     
-    print_success "Backup created in $backup_dir/"
-    print_info "Files created:"
-    print_info "  - wif-pool-${env}-${timestamp}.json"
-    print_info "  - wif-provider-${env}-${timestamp}.json"
-    print_info "  - iam-policy-${project}-${timestamp}.json"
+    print_success "Lightweight backup created: $backup_dir/wif-condition-${env}-${timestamp}.txt"
+    print_info "Backed up condition: $condition"
+    print_info "Note: Full configuration can be retrieved from GCP Console if needed"
 }
 
 # List currently allowed repositories
