@@ -6,7 +6,7 @@
 
 **トリガー:**
 - `main` ブランチにプッシュ → **開発環境**デプロイ
-- `v*` タグ作成 → **本番環境**デプロイ  
+- `v*` タグ作成 → **本番環境**デプロイ
 - Pull Request → **プレビュー**デプロイ（7日間）
 
 **認証方式:** Workload Identity Federation（キーレス認証）
@@ -42,7 +42,7 @@
 # 開発環境
 npm run wif:setup dev
 
-# 本番環境  
+# 本番環境
 npm run wif:setup prod rakugakimap-prod
 ```
 
@@ -57,7 +57,7 @@ npm run wif:setup prod rakugakimap-prod
 **Settings → Environments**で以下を作成：
 
 - `prod`: Required reviewers設定
-- `destroy-dev`: Required reviewers設定  
+- `destroy-dev`: Required reviewers設定
 - `destroy-prod`: Required reviewers設定
 
 ## 使用方法
@@ -86,7 +86,7 @@ Pull Request作成で自動実行、URLがコメント表示
 - Repository Variablesの値を確認
 - Workload Identity設定を再実行
 
-### Terraform実行エラー  
+### Terraform実行エラー
 - `terraform.tfvars`の設定を確認
 - プロジェクトIDとの整合性チェック
 
