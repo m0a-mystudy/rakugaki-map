@@ -52,6 +52,14 @@ function DrawingCanvas({
     }
   }, [shapes.length])
 
+  // shapesが変更されたときに即座にcanvasを再描画
+  useEffect(() => {
+    if (overlayRef.current) {
+      // Google Maps overlayの再描画を強制実行
+      google.maps.event.trigger(overlayRef.current, 'draw')
+    }
+  }, [shapes])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !map) return
