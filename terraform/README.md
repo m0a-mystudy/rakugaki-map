@@ -14,7 +14,34 @@
 1. [Terraform](https://www.terraform.io/downloads) のインストール
 2. [gcloud CLI](https://cloud.google.com/sdk/docs/install) のインストール
 3. GCPプロジェクトの作成
-4. 請求先アカウントの設定
+4. 請求先アカウント（Billing Account）の設定
+
+### Billing Account IDについて
+
+Billing Account IDは、GCPの利用料金を管理するアカウントのIDです。
+
+#### 確認方法
+```bash
+# CLIで確認
+gcloud billing accounts list
+
+# 出力例：
+# ACCOUNT_ID            NAME                OPEN  MASTER_ACCOUNT_ID
+# 01234A-567890-BCDEF1  My Billing Account  True
+```
+
+または、[Google Cloud Console](https://console.cloud.google.com/billing)で確認できます。
+
+#### 必要な場面
+- **既存プロジェクトを使用**: 不要（すでに紐付け済み）
+- **新規プロジェクトをTerraformで作成**: 必須
+- **無料トライアル中**: 自動的に作成されている
+
+#### プロジェクトへの紐付け
+```bash
+# 手動で紐付ける場合
+gcloud billing projects link PROJECT_ID --billing-account=BILLING_ACCOUNT_ID
+```
 
 ## 使用方法
 
