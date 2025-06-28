@@ -77,7 +77,7 @@ variable "firebase_ci_token" {
   default     = "placeholder"
 }
 
-# Use the main module
+# Use the main module (core infrastructure only)
 module "rakugaki_map" {
   source = "../../"
 
@@ -85,7 +85,6 @@ module "rakugaki_map" {
   region                        = var.region
   billing_account               = var.billing_account
   allowed_domains               = var.allowed_domains
-  environment                   = "dev"
   firebase_api_key             = var.firebase_api_key
   firebase_auth_domain         = var.firebase_auth_domain
   firebase_storage_bucket      = var.firebase_storage_bucket
@@ -106,13 +105,4 @@ output "project_id" {
   description = "GCP Project ID"
 }
 
-# WIF outputs (only available if WIF resources are created)
-output "workload_identity_provider" {
-  value       = try(module.rakugaki_map.workload_identity_provider, null)
-  description = "Workload Identity Provider resource name"
-}
-
-output "service_account_email" {
-  value       = try(module.rakugaki_map.service_account_email, null)
-  description = "Service account email for GitHub Actions"
-}
+# WIF outputs are not available since WIF resources are managed manually
