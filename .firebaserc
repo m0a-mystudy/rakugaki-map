@@ -2,6 +2,6 @@
   "projects": {
     "default": "rakugakimap-dev",
     "dev": "rakugakimap-dev",
-    "prod": "rakugakimap-prod"
+    "prod": "the-rakugaki-map"
   }
 }

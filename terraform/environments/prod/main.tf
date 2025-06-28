@@ -1,23 +1,30 @@
-# Production environment configuration
+# Production environment configuration (the-rakugaki-map)
+# This version does not include WIF resources which are managed manually
 
 terraform {
   required_version = ">= 1.0"
-  
-  # Production MUST use remote state
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+  }
+
   backend "gcs" {
-    # bucket = "your-prod-terraform-state"  # Set this!
+    # bucket will be specified via -backend-config during init
     prefix = "rakugaki-map/prod"
   }
 }
 
 # Variables
 variable "project_id" {
-  description = "GCP Project ID for production"
+  description = "GCP Project ID"
   type        = string
+  default     = "the-rakugaki-map"
 }
 
 variable "region" {
-  description = "Default region"
+  description = "Default region for resources"
   type        = string
   default     = "asia-northeast1"
 }
@@ -25,65 +32,90 @@ variable "region" {
 variable "billing_account" {
   description = "Billing account ID"
   type        = string
-  default     = ""
+  default     = "019580-0463A4-90F093"
+  sensitive   = true
 }
 
 variable "allowed_domains" {
-  description = "Allowed domains for API key restrictions"
+  description = "List of allowed domains for API key restrictions"
   type        = list(string)
-  default     = []
+  default     = [
+    "the-rakugaki-map.web.app",
+    "the-rakugaki-map.firebaseapp.com",
+    "rakugaki-map.web.app",
+    "rakugaki-map.firebaseapp.com"
+  ]
 }
 
-# Use the main module with production overrides
+# Firebase variables
+variable "firebase_api_key" {
+  description = "Firebase API Key"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_auth_domain" {
+  description = "Firebase Auth Domain"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_storage_bucket" {
+  description = "Firebase Storage Bucket"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_messaging_sender_id" {
+  description = "Firebase Messaging Sender ID"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_app_id" {
+  description = "Firebase App ID"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+variable "firebase_ci_token" {
+  description = "Firebase CI Token for deployments"
+  type        = string
+  sensitive   = true
+  default     = "placeholder"
+}
+
+# Use the main module (core infrastructure only)
 module "rakugaki_map" {
   source = "../../"
-  
-  project_id      = var.project_id
-  region          = var.region
-  billing_account = var.billing_account
-  
-  # Production-specific overrides can be added here
-  # For example, you might want to create a separate module
-  # for production API keys with stricter restrictions
-}
 
-# Production-specific API key with domain restrictions
-resource "google_apikeys_key" "maps_api_key_prod" {
-  name         = "rakugaki-map-api-key-prod"
-  display_name = "Rakugaki Map API Key (Production)"
-  
-  restrictions {
-    api_targets {
-      service = "maps-backend.googleapis.com"
-    }
-    api_targets {
-      service = "maps-embed-backend.googleapis.com"
-    }
-    api_targets {
-      service = "places-backend.googleapis.com"
-    }
-    
-    browser_key_restrictions {
-      # Production domains only
-      allowed_referrers = var.allowed_domains
-    }
-  }
+  project_id                     = var.project_id
+  region                        = var.region
+  billing_account               = var.billing_account
+  allowed_domains               = var.allowed_domains
+  firebase_api_key             = var.firebase_api_key
+  firebase_auth_domain         = var.firebase_auth_domain
+  firebase_storage_bucket      = var.firebase_storage_bucket
+  firebase_messaging_sender_id = var.firebase_messaging_sender_id
+  firebase_app_id              = var.firebase_app_id
+  firebase_ci_token            = var.firebase_ci_token
 }
 
 # Outputs
-output "api_key_dev" {
+output "api_key" {
   value       = module.rakugaki_map.api_key
   sensitive   = true
-  description = "Development API Key (localhost only)"
-}
-
-output "api_key_prod" {
-  value       = google_apikeys_key.maps_api_key_prod.key_string
-  sensitive   = true
-  description = "Production API Key (restricted domains)"
+  description = "Google Maps API Key"
 }
 
 output "project_id" {
   value       = module.rakugaki_map.project_id
   description = "GCP Project ID"
 }
+
+# WIF resources are managed manually and not tracked here

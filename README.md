@@ -155,12 +155,12 @@ VITE_FIREBASE_APP_ID=your_firebase_app_id
 
 **設定値の取得方法:**
 
-1. **Google Maps API Key**: 
+1. **Google Maps API Key**:
    ```bash
    # 開発環境
    cd terraform/environments/dev
    terraform output -raw api_key
-   
+
    # 本番環境
    cd terraform/environments/prod
    terraform output -raw api_key_prod
@@ -225,7 +225,7 @@ git push origin v1.0.0
 # 開発環境へデプロイ
 npm run deploy:dev
 
-# 本番環境へデプロイ  
+# 本番環境へデプロイ
 npm run deploy:prod
 ```
 
@@ -311,7 +311,7 @@ service cloud.firestore {
 
 #### 🔒 手動管理リソース（セキュリティ基盤）
 - `google_iam_workload_identity_pool`
-- `google_iam_workload_identity_pool_provider`  
+- `google_iam_workload_identity_pool_provider`
 - `google_service_account` (github-actions-wif)
 - WIF関連のIAM権限
 
@@ -397,7 +397,7 @@ gcloud iam workload-identity-pools providers create-oidc github-provider-prod \
 - **段階的変更**: 一度に大量の変更を避ける
 - **動作確認**: 変更後は必ずGitHub Actionsで動作テスト
 
-#### ❌ DON'T  
+#### ❌ DON'T
 - **権限の過剰付与**: editorやownerなど強力な権限の付与
 - **テストなし変更**: 本番環境での直接変更
 - **バックアップなし**: 設定の事前保存を怠る
@@ -420,25 +420,16 @@ gcloud projects remove-iam-policy-binding rakugakimap-dev \
 
 ### 定期メンテナンス
 
-#### 軽量メンテナンス（推奨）
+#### 簡単な監査（推奨）
 ```bash
-# 重要な設定のみ記録（attribute-condition）
-./scripts/wif-management.sh backup -p rakugakimap-dev -e dev
+# 現在の設定確認
+./scripts/wif-management.sh show-config -p rakugakimap-dev -e dev
 
-# 不要な権限の確認・監査
+# 不要な権限の確認
 ./scripts/wif-management.sh list-permissions -p rakugakimap-dev -e dev
 ```
 
-#### フルバックアップ（必要時のみ）
-```bash
-# 完全な設定が必要な場合のみ実行
-gcloud iam workload-identity-pools providers describe github-provider \
-    --location=global \
-    --workload-identity-pool=github-actions-pool \
-    --project=rakugakimap-dev > wif-provider-backup-$(date +%Y%m%d).json
-```
-
-> **注意**: WIF設定は比較的シンプルで、GCPコンソールからも確認できるため、定期的な完全バックアップは通常不要です。
+> **バックアップについて**: WIF設定はシンプルな文字列設定のため、バックアップは不要です。設定は常にGCPコンソールで確認でき、手動で復旧可能です。
 
 ### WIF管理スクリプト
 
@@ -457,34 +448,31 @@ chmod +x scripts/wif-management.sh
 #### 主要なコマンド
 
 ```bash
-# 1. 現在の設定をバックアップ
-./scripts/wif-management.sh backup -p rakugakimap-dev -e dev
-
-# 2. 許可されているリポジトリの確認
+# 1. 許可されているリポジトリの確認
 ./scripts/wif-management.sh list-repos -p rakugakimap-dev -e dev
 
-# 3. 新しいリポジトリの追加（まずドライランで確認）
+# 2. 新しいリポジトリの追加（まずドライランで確認）
 ./scripts/wif-management.sh add-repo -p rakugakimap-dev -e dev -r m0a-mystudy/new-repo --dry-run
 
-# 4. 新しいリポジトリの追加（実際の実行）
+# 3. 新しいリポジトリの追加（実際の実行）
 ./scripts/wif-management.sh add-repo -p rakugakimap-dev -e dev -r m0a-mystudy/new-repo
 
-# 5. サービスアカウントの権限確認
+# 4. サービスアカウントの権限確認
 ./scripts/wif-management.sh list-permissions -p rakugakimap-dev -e dev
 
-# 6. 現在のWIF設定全体を表示
+# 5. 現在のWIF設定全体を表示
 ./scripts/wif-management.sh show-config -p rakugakimap-dev -e dev
 ```
 
 #### スクリプトの安全機能
 
-- **軽量バックアップ**: 変更前に重要な設定（attribute-condition）を保存
 - **ドライランモード**: 実際の変更前にテスト実行
 - **入力検証**: 不正な形式の入力を防止
 - **確認プロンプト**: 重要な変更時に明示的な確認
 - **設定確認**: 現在の状態を簡単に表示
+- **即座復旧**: GCPコンソールで設定確認・復旧可能
 
-> **バックアップについて**: WIF設定は比較的シンプルで復旧しやすいため、最重要な`attribute-condition`のみを軽量バックアップします。
+> **シンプル性重視**: WIF設定は文字列1行程度のシンプルな設定なので、バックアップ機能は提供していません。設定はいつでもGCPコンソールで確認でき、手動復旧も容易です。
 
 ### 参考ファイル
 
