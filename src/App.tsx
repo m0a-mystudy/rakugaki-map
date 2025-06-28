@@ -34,6 +34,7 @@ function App() {
   const [center, setCenter] = useState(defaultCenter)
   const [zoom, setZoom] = useState(15)
   const [user, setUser] = useState<any>(null)
+  const [isLocating, setIsLocating] = useState(false)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -157,6 +158,52 @@ function App() {
     alert('共有リンクをコピーしました！')
   }
 
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert('このブラウザでは位置情報がサポートされていません')
+      return
+    }
+
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+        const newCenter = { lat, lng }
+
+        setCenter(newCenter)
+        if (map) {
+          map.panTo(newCenter)
+          map.setZoom(16)
+          setZoom(16)
+        }
+        setIsLocating(false)
+      },
+      (error) => {
+        console.error('位置情報の取得に失敗しました:', error)
+        let message = '位置情報の取得に失敗しました'
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            message = '位置情報の使用が拒否されました'
+            break
+          case error.POSITION_UNAVAILABLE:
+            message = '位置情報が利用できません'
+            break
+          case error.TIMEOUT:
+            message = '位置情報の取得がタイムアウトしました'
+            break
+        }
+        alert(message)
+        setIsLocating(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    )
+  }
+
   const colors = [
     '#ff4757', // 赤
     '#3742fa', // 青
@@ -203,6 +250,13 @@ function App() {
         </button>
 
         <div className="action-buttons">
+          <button
+            className="action-button locate"
+            onClick={handleLocateMe}
+            disabled={isLocating}
+          >
+            {isLocating ? '📍 取得中...' : '📍 現在地'}
+          </button>
           <button
             className="action-button clear"
             onClick={handleClear}
