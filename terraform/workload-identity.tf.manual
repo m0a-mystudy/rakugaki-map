@@ -1,5 +1,7 @@
 # Workload Identity Federation for GitHub Actions
 # This enables keyless authentication from GitHub Actions to GCP
+# NOTE: These resources are managed manually and not applied via CI/CD
+# because the CI/CD service account cannot modify its own WIF configuration
 
 # Enable required APIs
 resource "google_project_service" "iam_credentials" {
