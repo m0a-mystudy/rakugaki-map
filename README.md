@@ -67,7 +67,9 @@ terraform apply
 terraform output -raw api_key_prod
 ```
 
-詳細は [terraform/README.md](terraform/README.md) および [terraform/environments/README.md](terraform/environments/README.md) を参照
+詳細は [terraform/README.md](terraform/README.md) を参照
+
+**インフラ管理について**: このプロジェクトはTerraformとマニュアル管理の**ハイブリッドアプローチ**を採用しています。APIサービス、Firestore、認証設定など14個のリソースをTerraformで管理し、セキュリティ基盤（WIF、Secret Manager、State Bucket）は手動管理しています。詳細は [terraform/INFRASTRUCTURE_MANAGEMENT.md](terraform/INFRASTRUCTURE_MANAGEMENT.md) を参照してください。
 
 #### 手動セットアップ
 
