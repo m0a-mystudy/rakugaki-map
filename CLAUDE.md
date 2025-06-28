@@ -73,6 +73,18 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=xxx
 VITE_FIREBASE_APP_ID=xxx
 ```
 
+**Getting Environment Variables**:
+- **Google Maps API Key**: Get from Terraform output
+  ```bash
+  cd terraform/environments/dev && terraform output -raw api_key
+  ```
+- **Firebase Configuration**: Get from Secret Manager
+  ```bash
+  gcloud secrets versions access latest --secret="firebase-api-key-dev"  # pragma: allowlist secret
+  gcloud secrets versions access latest --secret="firebase-auth-domain-dev"  # pragma: allowlist secret
+  # etc. for other Firebase config values
+  ```
+
 Without these, the app will load but maps won't display and saving won't work.
 
 ### Security Implementation
@@ -88,14 +100,17 @@ The application implements a secure access model:
      allow write: if request.auth != null;
    }
    ```
-3. **Terraform Management**: All security settings deployed via Infrastructure as Code
+3. **Infrastructure Management**: Hybrid approach with Terraform and manual management
+   - Terraform manages: API services, Firestore database, security rules, authentication config
+   - Manual management: WIF, Secret Manager, state buckets (see `terraform/INFRASTRUCTURE_MANAGEMENT.md`)
 
 ### Deployment & Hosting
 
 The application supports both manual and automated deployment to Firebase Hosting:
 
 1. **CI/CD Pipeline**: GitHub Actions for automated deployment
-   - Main branch push → Production deployment
+   - Main branch push → Development deployment (rakugakimap-dev.web.app)
+   - Tag v*.*.* push → Production deployment (the-rakugaki-map.web.app)
    - Pull Request → Preview deployment (7-day expiry)
    - Automated security checks and build validation
 
@@ -106,15 +121,26 @@ The application supports both manual and automated deployment to Firebase Hostin
 
 ### CI/CD Architecture
 
-- **Workflow file**: `.github/workflows/deploy.yml`
-- **Service account**: Firebase Admin access via GitHub Secrets
-- **Security**: All credentials stored in GitHub Secrets
+- **Workflow files**:
+  - `.github/workflows/deploy.yml` - Application deployment
+  - `.github/workflows/terraform.yml` - Infrastructure management
+- **Authentication**: Workload Identity Federation (keyless authentication)
+- **Service accounts**:
+  - `github-actions-wif@rakugakimap-dev.iam.gserviceaccount.com`
+  - `github-actions-wif@the-rakugaki-map.iam.gserviceaccount.com`
+- **Security**: All credentials stored in Secret Manager (no GitHub Secrets)
 - **Preview deployments**: Temporary channels for PR review
+
+**Environment Configuration**:
+- **Development**: `rakugakimap-dev` project
+- **Production**: `the-rakugaki-map` project
+- **State Management**: Separate GCS buckets for Terraform state
+- **Secret Access**: Direct via WIF and `gcloud secrets versions access`
 
 ### Current Limitations & Future Work
 
 1. **No auto-save**: Users must manually click save
-2. **No real-time collaboration**: Uses Firestore but not real-time listeners  
+2. **No real-time collaboration**: Uses Firestore but not real-time listeners
 3. **Anonymous-only authentication**: Could add Google/GitHub login for persistent identity
 4. **No drawing deletion**: Can only clear all or nothing
 5. **Bundle size**: Firebase adds ~200KB to bundle
@@ -125,3 +151,111 @@ Currently no tests. When adding tests:
 - Mock Google Maps API for DrawingCanvas tests
 - Mock Firebase for service layer tests
 - Focus on coordinate transformation logic as it's most complex
+
+## Infrastructure Management
+
+### Current Approach
+
+This project uses a **hybrid infrastructure management approach**:
+
+**Terraform Managed (14 resources)**:
+- API services (Maps, Firebase, Firestore, Identity Toolkit)
+- Google Maps API key with domain restrictions
+- Firestore database and security rules
+- Firebase Authentication configuration
+
+**Manually Managed (Security Foundations)**:
+- Terraform state buckets (circular dependency avoidance)
+- Workload Identity Federation resources (security separation)
+- Secret Manager secrets and versions (security)
+
+### Key Commands
+
+**Infrastructure Deployment**:
+```bash
+# Development
+cd terraform/environments/dev
+terraform init && terraform apply
+
+# Production
+cd terraform/environments/prod
+terraform init && terraform apply
+```
+
+**Get Environment Variables**:
+```bash
+# API Key from Terraform
+terraform output -raw api_key
+
+# Firebase config from Secret Manager
+gcloud secrets versions access latest --secret="firebase-api-key-dev"  # pragma: allowlist secret
+```
+
+**Manual Resource Management**:
+- See `terraform/STATE_BUCKET_MANAGEMENT.md` for state bucket operations
+- See `terraform/SECRET_MANAGEMENT.md` for secret operations
+- See `terraform/INFRASTRUCTURE_MANAGEMENT.md` for complete overview
+
+### Architecture Benefits
+
+- **Security**: Authentication infrastructure isolated from application infrastructure
+- **Safety**: CI/CD cannot modify its own security foundations
+- **Maintainability**: Clear separation of automated vs. manual management
+- **Debugging**: Obvious responsibility boundaries
+
+## Development Workflow
+
+### Branch Strategy
+- **main branch**: Auto-deploy to development environment
+- **tags (v*.*.*)**: Auto-deploy to production environment
+- **Pull Requests**: Create preview environments (7-day expiry)
+
+### Environment Flow
+```
+Feature Branch → Pull Request → Preview Environment
+     ↓              ↓
+main branch → Development (rakugakimap-dev.web.app)
+     ↓
+Tag v*.*.* → Production (the-rakugaki-map.web.app)
+```
+
+### Infrastructure Changes
+**Terraform Resources (Application Infrastructure)**:
+```bash
+# 1. Test in development
+cd terraform/environments/dev
+terraform plan && terraform apply
+
+# 2. Commit changes
+git add terraform/ && git commit -m "feat: update infrastructure"
+
+# 3. Apply to production
+cd terraform/environments/prod
+terraform plan && terraform apply
+```
+
+**Manual Resources (Security Foundations)**:
+- State buckets: Manual GCS operations
+- WIF: Manual gcloud commands with careful testing
+- Secrets: Manual Secret Manager operations
+- See detailed docs in terraform/ directory
+
+### Deployment Commands
+```bash
+# Development deployment
+git push origin main  # Auto-triggers CI/CD
+
+# Production deployment
+git tag v1.0.0 && git push origin v1.0.0  # Auto-triggers CI/CD
+
+# Manual deployment (if needed)
+npm run deploy:dev
+npm run deploy:prod
+```
+
+### Troubleshooting
+1. **CI/CD failures**: Check GitHub Actions logs for WIF/permissions issues
+2. **Infrastructure issues**: Check Terraform state and manual resource status
+3. **Deployment issues**: Verify Firebase project settings and domain restrictions
+
+**Key Reference**: See [WORKFLOW.md](WORKFLOW.md) for complete development and operational procedures.

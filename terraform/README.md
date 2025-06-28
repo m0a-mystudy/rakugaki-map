@@ -1,77 +1,150 @@
-# Terraform Infrastructure Setup
+# Terraform Infrastructure Management
 
 This directory contains Terraform configurations for the Rakugaki Map application infrastructure.
 
-## Required GitHub Secrets
+## Management Approach
 
-Only these 2 secrets are required in your GitHub repository:
+This project uses a **hybrid management approach** that separates security foundations from application infrastructure:
 
-1. **`FIREBASE_CI_TOKEN`**: Firebase CLI token for deployments
-   - Get it by running: `firebase login:ci`
+- **Manual Management**: State buckets, Workload Identity Federation, Secret Manager
+- **Terraform Management**: API services, API keys, Firestore, authentication config (14 resources)
 
-2. **`BILLING_ACCOUNT_ID`**: Your GCP billing account ID
-   - Get it by running: `gcloud billing accounts list`
+For complete details, see [INFRASTRUCTURE_MANAGEMENT.md](./INFRASTRUCTURE_MANAGEMENT.md).
 
-All Firebase configuration (API keys, auth domain, storage bucket, etc.) is automatically retrieved from your Firebase project during CI/CD.
+## Quick Start
 
-## Setup Process
-
-### 1. One-time Firebase Setup
-
-If you haven't already set up Firebase for your project:
+### Development Environment
 
 ```bash
-# Install Firebase CLI
-npm install -g firebase-tools
-
-# Login and initialize
-firebase login
-firebase init hosting
-
-# Get CI token for GitHub Actions
-firebase login:ci
-# Copy the token to GitHub Secrets as FIREBASE_CI_TOKEN
-```
-
-### 2. Local Development
-
-```bash
-# Copy and edit the local config file
-cp terraform/environments/dev/terraform.tfvars terraform/environments/dev/terraform.tfvars.local
-# Edit terraform.tfvars.local with your actual values
-
-# Apply Terraform with local config
+# Ensure prerequisites
 cd terraform/environments/dev
-terraform init -backend-config="bucket=rakugakimap-dev-terraform-state"
-terraform plan -var-file="terraform.tfvars.local"
-terraform apply -var-file="terraform.tfvars.local"
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your project_id
+
+# Deploy infrastructure
+terraform init
+terraform apply
+
+# Get API key for local development
+terraform output -raw api_key
 ```
 
-### 3. CI/CD Setup
+### Production Environment
 
-1. Add required GitHub Secrets:
-   - `FIREBASE_CI_TOKEN`: Your Firebase CI token
-   - `BILLING_ACCOUNT_ID`: Your GCP billing account ID
+```bash
+# Setup production environment
+cd terraform/environments/prod
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with project_id and allowed_domains
 
-2. Add required GitHub Variables:
-   - `FIREBASE_PROJECT_ID_DEV`: Your dev project ID (e.g., `rakugakimap-dev`)
-   - `FIREBASE_PROJECT_ID_PROD`: Your prod project ID (e.g., `rakugakimap-prod`)
+# Deploy infrastructure
+terraform init
+terraform apply
 
-3. After first successful Terraform apply, add these GitHub Variables:
-   - `WIF_PROVIDER`: Workload Identity Provider (from Terraform output)
-   - `WIF_SERVICE_ACCOUNT`: Service account email (from Terraform output)
+# Get production API key
+terraform output -raw api_key
+```
 
-## Architecture
+## CI/CD Integration
 
-- **Firebase Configuration**: Auto-detected from Firebase CLI during CI/CD
-- **Workload Identity Federation**: Secure, keyless authentication for GitHub Actions
-- **Secret Manager**: Stores all sensitive values for application runtime
-- **Multi-environment**: Separate dev/prod configurations
+The project uses **Workload Identity Federation** for secure, keyless authentication:
 
-## Benefits
+### Prerequisites (Manual Setup)
 
-- ✅ **Secure**: No hardcoded API keys in repository
-- ✅ **Automated**: Firebase config auto-detected during CI/CD
-- ✅ **Minimal Secrets**: Only 2 GitHub Secrets required
-- ✅ **Scalable**: Multi-environment support
-- ✅ **Maintainable**: Infrastructure as Code with Terraform
+1. **State Buckets**: Created manually to avoid circular dependencies
+   - Dev: `rakugakimap-dev-terraform-state`
+   - Prod: `the-rakugaki-map-terraform-state`
+
+2. **Workload Identity Federation**: Configured manually for security
+   - WIF pools and providers for GitHub Actions authentication
+
+3. **Secret Manager**: Stores Firebase configuration and API keys
+   - All sensitive values accessed via `gcloud secrets versions access`
+
+### GitHub Actions Variables
+
+No GitHub Secrets required! All sensitive values are stored in Secret Manager:
+
+- `FIREBASE_PROJECT_ID_DEV`: Development project ID
+- `FIREBASE_PROJECT_ID_PROD`: Production project ID
+- `WIF_PROVIDER_DEV`: Dev WIF provider
+- `WIF_SERVICE_ACCOUNT_DEV`: Dev service account
+- `WIF_PROVIDER_PROD`: Prod WIF provider
+- `WIF_SERVICE_ACCOUNT_PROD`: Prod service account
+
+## Terraform Resources
+
+### Currently Managed (14 resources)
+
+**API Services (9 resources):**
+- Maps APIs, Firebase APIs, Identity Toolkit, Firestore
+
+**Application Infrastructure (5 resources):**
+- Google Maps API key with domain restrictions
+- Firestore database and security rules
+- Firebase Authentication configuration
+
+### Not Managed by Terraform
+
+**Manual Management (Security/Circular Dependencies):**
+- Terraform state buckets
+- Workload Identity Federation resources
+- Secret Manager secrets and versions
+
+## Environment Structure
+
+```
+terraform/
+├── main.tf                          # Core infrastructure (14 resources)
+├── firestore.rules                  # Firestore security rules
+├── environments/
+│   ├── dev/                         # Development environment
+│   └── prod/                        # Production environment
+└── docs/
+    ├── INFRASTRUCTURE_MANAGEMENT.md  # Complete management overview
+    ├── STATE_BUCKET_MANAGEMENT.md    # State bucket documentation
+    └── SECRET_MANAGEMENT.md          # Secret Manager documentation
+```
+
+## Local Development
+
+```bash
+# Set up environment variables for local development
+echo "VITE_GOOGLE_MAPS_API_KEY=$(terraform output -raw api_key)" > ../../.env.local
+echo "VITE_FIREBASE_API_KEY=$(gcloud secrets versions access latest --secret='firebase-api-key-dev')" >> ../../.env.local  # pragma: allowlist secret
+# Add other Firebase config variables...
+
+# Start development server
+cd ../../
+npm run dev
+```
+
+## Deployment
+
+### Automatic (Recommended)
+- **Development**: Push to `main` branch
+- **Production**: Create tag `v*.*.*`
+
+### Manual
+```bash
+# Development
+npm run deploy:dev
+
+# Production
+npm run deploy:prod
+```
+
+## Key Benefits
+
+- ✅ **Secure**: No sensitive values in Terraform state or GitHub
+- ✅ **Automated**: Full CI/CD with keyless authentication
+- ✅ **Maintainable**: Clear separation of manual vs. automated resources
+- ✅ **Scalable**: Multi-environment support with proper isolation
+- ✅ **Debuggable**: Obvious boundaries between management approaches
+
+## Getting Help
+
+- **Infrastructure Management**: [INFRASTRUCTURE_MANAGEMENT.md](./INFRASTRUCTURE_MANAGEMENT.md)
+- **State Management**: [STATE_BUCKET_MANAGEMENT.md](./STATE_BUCKET_MANAGEMENT.md)
+- **Secret Management**: [SECRET_MANAGEMENT.md](./SECRET_MANAGEMENT.md)
+- **Main Documentation**: [../README.md](../README.md)
