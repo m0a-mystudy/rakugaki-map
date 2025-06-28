@@ -45,6 +45,32 @@ gcloud billing projects link PROJECT_ID --billing-account=BILLING_ACCOUNT_ID
 
 ## 使用方法
 
+### 環境別セットアップ（推奨）
+
+開発環境と本番環境で設定を分離する場合は、`environments/` ディレクトリを使用します。
+
+```bash
+# 開発環境
+cd terraform/environments/dev
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集
+terraform init
+terraform apply
+
+# 本番環境
+cd terraform/environments/prod
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集（ドメイン制限も設定）
+terraform init -backend-config="bucket=your-prod-state"
+terraform apply
+```
+
+詳細は [environments/README.md](environments/README.md) を参照
+
+### 単一環境セットアップ
+
+1つの環境のみ使用する場合：
+
 1. **認証設定**
 ```bash
 gcloud auth application-default login
@@ -61,22 +87,22 @@ cp terraform.tfvars.example terraform.tfvars
 project_id = "your-actual-project-id"
 ```
 
-4. **Terraform初期化**
+4. **Terraform初期化とState設定**
 ```bash
+# Stateバケット作成
 terraform init
+terraform apply -target=google_storage_bucket.terraform_state
+
+# backend.tf を編集してバケット名を設定
+terraform init -migrate-state
 ```
 
-5. **プランの確認**
-```bash
-terraform plan
-```
-
-6. **リソースの作成**
+5. **リソースの作成**
 ```bash
 terraform apply
 ```
 
-7. **API キーの取得**
+6. **API キーの取得**
 ```bash
 terraform output -raw api_key
 ```
