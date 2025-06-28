@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // drawings コレクション：読み取りは全員、書き込みは全員（開発環境）
+    // 本番環境では認証を追加してください
+    match /drawings/{documentId} {
+      allow read: if true;
+      allow write: if true;  // 本番では: if request.auth != null;
+    }
+  }
+}

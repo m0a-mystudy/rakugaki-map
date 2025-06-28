@@ -1,0 +1,8 @@
+# GCP Project ID (必須)
+project_id = "your-gcp-project-id"
+
+# Default region (オプション - デフォルト: asia-northeast1)
+region = "asia-northeast1"
+
+# Billing account ID (新規プロジェクト作成時のみ必須)
+# billing_account = "XXXXXX-XXXXXX-XXXXXX"
