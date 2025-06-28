@@ -221,6 +221,10 @@ function App() {
   }
 
   const handleMenuMouseDown = (e: React.MouseEvent) => {
+    // Don't start dragging if clicking on a button
+    if ((e.target as HTMLElement).tagName === 'BUTTON') {
+      return
+    }
     setIsDragging(true)
     setDragStart({
       x: e.clientX - menuPosition.x,
@@ -241,6 +245,10 @@ function App() {
   }
 
   const handleMenuTouchStart = (e: React.TouchEvent) => {
+    // Don't start dragging if touching a button
+    if ((e.target as HTMLElement).tagName === 'BUTTON') {
+      return
+    }
     const touch = e.touches[0]
     setIsDragging(true)
     setDragStart({
@@ -265,6 +273,7 @@ function App() {
   }
 
   const rotateMap = (degrees: number) => {
+    console.log('rotateMap called with degrees:', degrees, 'isDragging:', isDragging)
     if (!map) return
     const newHeading = (mapHeading + degrees) % 360
     setMapHeading(newHeading)
@@ -395,6 +404,7 @@ function App() {
             <button
               className="action-button rotate-left"
               onClick={(e) => {
+                console.log('Left rotate button clicked')
                 e.stopPropagation()
                 if (!isDragging) rotateMap(-45)
               }}
@@ -405,6 +415,7 @@ function App() {
             <button
               className="action-button rotate-right"
               onClick={(e) => {
+                console.log('Right rotate button clicked')
                 e.stopPropagation()
                 if (!isDragging) rotateMap(45)
               }}
@@ -415,6 +426,7 @@ function App() {
             <button
               className="action-button reset-rotation"
               onClick={(e) => {
+                console.log('Reset rotation button clicked')
                 e.stopPropagation()
                 if (!isDragging) resetMapRotation()
               }}
