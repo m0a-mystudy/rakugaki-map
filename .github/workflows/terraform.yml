@@ -94,9 +94,9 @@ jobs:
 
       - name: Get Firebase Configuration
         id: firebase_config
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_CI_TOKEN }}
         run: |
-          # Authenticate Firebase CLI with CI token
-          echo "${{ secrets.FIREBASE_CI_TOKEN }}" | firebase login:ci --token-stdin
 
           # Get Firebase configuration
           source <(./scripts/get-firebase-config.sh ${{ env.PROJECT_ID }})
@@ -241,9 +241,9 @@ jobs:
 
       - name: Get Firebase Configuration
         id: firebase_config
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_CI_TOKEN }}
         run: |
-          # Authenticate Firebase CLI with CI token
-          echo "${{ secrets.FIREBASE_CI_TOKEN }}" | firebase login:ci --token-stdin
 
           # Get Firebase configuration
           source <(./scripts/get-firebase-config.sh ${{ env.PROJECT_ID }})
