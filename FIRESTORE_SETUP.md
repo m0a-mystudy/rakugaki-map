@@ -1,10 +1,11 @@
-# Firestore セキュリティルール設定手順
+# Firebase セキュリティ設定手順
 
-## 🔥 現在のエラー
+## 🔒 セキュリティレベル変更
 
-```
-FirebaseError: [code=permission-denied]: Missing or insufficient permissions
-```
+**新しい設定**: 読み取り専用 + 認証済みユーザーのみ編集可能
+
+- ✅ **読み取り**: 誰でも描画を見ることができる
+- 🔐 **編集**: 認証済みユーザーのみ（匿名認証で自動対応）
 
 ## ⚡ 手動設定（即座に解決）
 
@@ -20,9 +21,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // drawings コレクション：読み取り・書き込みを全員に許可（開発環境）
+    // drawings コレクション：読み取りは全員、書き込みは認証済みユーザーのみ
     match /drawings/{documentId} {
-      allow read, write: if true;
+      allow read: if true;                    // 誰でも描画を見ることができる
+      allow write: if request.auth != null;  // 認証済みユーザーのみ編集可能
     }
   }
 }
@@ -30,11 +32,20 @@ service cloud.firestore {
 
 5. 「公開」ボタンをクリック
 
-### 2. 設定確認
+### 2. Firebase Authentication で匿名認証を有効化
+
+1. [Firebase Console](https://console.firebase.google.com/project/rakugakimap-dev/authentication/providers) を開く
+2. 左サイドバーの「Authentication」をクリック
+3. 上部タブの「Sign-in method」をクリック
+4. 「匿名」プロバイダーを見つけて「有効にする」をクリック
+5. 「保存」ボタンをクリック
+
+### 3. 設定確認
 
 - ブラウザで http://localhost:5173 を開く
-- 右上の「Test Firestore」ボタンをクリック
-- ✅ が表示されれば成功
+- コンソールに「🔥 Anonymous user signed in: xxx」が表示されることを確認
+- 何か描画して「保存」ボタンをテスト
+- 「Drawing saved successfully!」が表示されれば成功
 
 ## 🔧 自動設定（Firebase CLI使用）
 
