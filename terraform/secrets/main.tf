@@ -113,10 +113,57 @@ resource "google_secret_manager_secret_version" "firebase_token" {
 }
 
 # Variables for sensitive data
+variable "project_id" {
+  description = "GCP Project ID"
+  type        = string
+}
+
 variable "environment" {
   description = "Environment name (dev or prod)"
   type        = string
   default     = "dev"
+}
+
+variable "firebase_api_key" {
+  description = "Firebase API Key"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_auth_domain" {
+  description = "Firebase Auth Domain"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_storage_bucket" {
+  description = "Firebase Storage Bucket"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_messaging_sender_id" {
+  description = "Firebase Messaging Sender ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_app_id" {
+  description = "Firebase App ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "firebase_ci_token" {
+  description = "Firebase CI Token for deployments"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_maps_api_key" {
+  description = "Google Maps API Key"
+  type        = string
+  sensitive   = true
 }
 
 # Output secret resource names for reference
