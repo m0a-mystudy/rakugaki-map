@@ -95,7 +95,7 @@ resource "google_secret_manager_secret" "google_maps_api_key" {
 
 resource "google_secret_manager_secret_version" "google_maps_api_key" {
   secret      = google_secret_manager_secret.google_maps_api_key.id
-  secret_data = google_apikeys_key.maps_api_key.key_string
+  secret_data = var.maps_api_key_value
 }
 
 # Firebase CI Token (for Firebase CLI operations)
@@ -160,7 +160,7 @@ variable "firebase_ci_token" {
   sensitive   = true
 }
 
-variable "google_maps_api_key" {
+variable "maps_api_key_value" {
   description = "Google Maps API Key"
   type        = string
   sensitive   = true
