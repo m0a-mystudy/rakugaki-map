@@ -26,8 +26,8 @@ const options = {
   fullscreenControl: false,
   // Enable satellite view for better rotation visibility
   mapTypeId: 'hybrid',
-  // Enable 45 degree tilt for better 3D effect
-  tilt: 45,
+  // Keep flat view (no tilt)
+  tilt: 0,
   heading: 0,
 }
 
@@ -265,30 +265,16 @@ function App() {
   }
 
   const rotateMap = (degrees: number) => {
-    console.log('🔄 Rotate button clicked:', degrees, 'map exists:', !!map)
-    if (!map) {
-      console.error('❌ Map not initialized')
-      return
-    }
+    if (!map) return
     const newHeading = (mapHeading + degrees) % 360
-    console.log('🧭 Setting heading from', mapHeading, 'to', newHeading)
     setMapHeading(newHeading)
 
     try {
-      // Try multiple methods for setting rotation
-      if (typeof map.setHeading === 'function') {
-        map.setHeading(newHeading)
-        console.log('✅ Used setHeading method')
-      } else {
-        // Alternative: set options
-        map.setOptions({
-          heading: newHeading,
-          tilt: 45
-        })
-        console.log('✅ Used setOptions method')
-      }
+      map.setOptions({
+        heading: newHeading,
+        tilt: 0
+      })
     } catch (error) {
-      console.error('❌ Failed to set map heading:', error)
       // Fallback: try to recreate map with new heading
       try {
         const currentCenter = map.getCenter()
@@ -297,38 +283,23 @@ function App() {
           center: currentCenter,
           zoom: currentZoom,
           heading: newHeading,
-          tilt: 45
+          tilt: 0
         })
-        console.log('✅ Used setOptions fallback')
       } catch (fallbackError) {
-        console.error('❌ All rotation methods failed:', fallbackError)
+        console.error('Failed to rotate map:', fallbackError)
       }
     }
   }
 
   const resetMapRotation = () => {
-    console.log('🧭 Reset rotation button clicked, map exists:', !!map)
-    if (!map) {
-      console.error('❌ Map not initialized')
-      return
-    }
+    if (!map) return
     setMapHeading(0)
     try {
-      // Try multiple methods for resetting rotation
-      if (typeof map.setHeading === 'function') {
-        map.setHeading(0)
-        map.setTilt(0)
-        console.log('✅ Used setHeading/setTilt methods')
-      } else {
-        // Alternative: set options
-        map.setOptions({
-          heading: 0,
-          tilt: 0
-        })
-        console.log('✅ Used setOptions method for reset')
-      }
+      map.setOptions({
+        heading: 0,
+        tilt: 0
+      })
     } catch (error) {
-      console.error('❌ Failed to reset map rotation:', error)
       // Fallback
       try {
         const currentCenter = map.getCenter()
@@ -339,9 +310,8 @@ function App() {
           heading: 0,
           tilt: 0
         })
-        console.log('✅ Used setOptions fallback for reset')
       } catch (fallbackError) {
-        console.error('❌ All reset methods failed:', fallbackError)
+        console.error('Failed to reset map rotation:', fallbackError)
       }
     }
   }
