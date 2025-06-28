@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
+import { initializeAuth, onAuthChange } from './firebase'
 import type { DrawingTool, Shape } from './types'
 import './App.css'
 
@@ -31,6 +32,8 @@ function App() {
   const [isSaving, setIsSaving] = useState(false)
   const [center, setCenter] = useState(defaultCenter)
   const [zoom, setZoom] = useState(15)
+  const [user, setUser] = useState<any>(null)
+  const [isAuthenticating, setIsAuthenticating] = useState(true)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -44,6 +47,22 @@ function App() {
       setDrawingId(newId)
       window.history.replaceState({}, '', `?id=${newId}`)
     }
+  }, [])
+
+  // 認証の初期化
+  useEffect(() => {
+    const unsubscribe = onAuthChange((user) => {
+      setUser(user)
+      setIsAuthenticating(false)
+      if (user) {
+        console.log('🔥 User authenticated:', user.uid)
+      } else {
+        console.log('🔥 User not authenticated, signing in anonymously...')
+        initializeAuth().catch(console.error)
+      }
+    })
+
+    return () => unsubscribe()
   }, [])
 
   const loadDrawingData = async (id: string) => {
@@ -81,7 +100,12 @@ function App() {
   }, [])
 
   const handleSave = async () => {
-    console.log('🔥 Save button clicked', { drawingId, shapesCount: shapes.length })
+    console.log('🔥 Save button clicked', { drawingId, shapesCount: shapes.length, user: user?.uid })
+
+    if (!user) {
+      alert('認証中です。少々お待ちください...')
+      return
+    }
 
     if (!drawingId) {
       console.error('❌ No drawing ID')
@@ -101,7 +125,11 @@ function App() {
       alert('Drawing saved successfully!')
     } catch (error) {
       console.error('Failed to save drawing:', error)
-      alert(`Save failed: ${error}`)
+      if (error.toString().includes('permission-denied')) {
+        alert('保存権限がありません。認証が必要です。')
+      } else {
+        alert(`Save failed: ${error}`)
+      }
     } finally {
       setIsSaving(false)
     }
@@ -168,9 +196,9 @@ function App() {
           <button
             className="action-button save"
             onClick={handleSave}
-            disabled={isSaving || shapes.length === 0}
+            disabled={isSaving || shapes.length === 0 || !user}
           >
-            {isSaving ? '保存中...' : '保存'}
+            {isSaving ? '保存中...' : isAuthenticating ? '認証中...' : '保存'}
           </button>
           <button
             className="action-button clear"

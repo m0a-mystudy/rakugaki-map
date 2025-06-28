@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,3 +33,20 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIRESTORE_EMULATOR === 'true
 
 // デバッグ: Firestore初期化確認
 console.log('🔥 Firestore initialized:', db.app.name)
+
+// 匿名認証の自動実行
+export const initializeAuth = async () => {
+  try {
+    const user = await signInAnonymously(auth)
+    console.log('🔥 Anonymous user signed in:', user.user.uid)
+    return user.user
+  } catch (error) {
+    console.error('❌ Anonymous authentication failed:', error)
+    throw error
+  }
+}
+
+// 認証状態の監視
+export const onAuthChange = (callback: (user: any) => void) => {
+  return onAuthStateChanged(auth, callback)
+}
