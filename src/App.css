@@ -31,11 +31,13 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   min-width: 200px;
-  /* Re-enable text selection for controls */
-  -webkit-user-select: auto;
-  -moz-user-select: auto;
-  -ms-user-select: auto;
-  user-select: auto;
+  /* Prevent text selection in menu but allow button interactions */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .draw-button {
@@ -47,6 +49,11 @@
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
+  /* Prevent text selection on buttons */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .draw-button:hover {
@@ -78,6 +85,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: white;
+  /* Prevent text selection on buttons */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .action-button:hover:not(:disabled) {
@@ -138,6 +150,11 @@ h3 {
   font-size: 14px;
   font-weight: 600;
   color: #333;
+  /* Prevent text selection on headers */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .tool-buttons {
@@ -154,6 +171,11 @@ h3 {
   cursor: pointer;
   font-size: 20px;
   transition: all 0.2s ease;
+  /* Prevent text selection on buttons */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .tool-button:hover {
