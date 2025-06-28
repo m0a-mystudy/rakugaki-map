@@ -35,6 +35,7 @@ function App() {
   const [zoom, setZoom] = useState(15)
   const [user, setUser] = useState<any>(null)
   const [isLocating, setIsLocating] = useState(false)
+  const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -149,6 +150,7 @@ function App() {
   const handleClear = () => {
     if (confirm('すべての描画を削除しますか？')) {
       setShapes([])
+      setHasCurrentDrawing(false)
     }
   }
 
@@ -237,6 +239,7 @@ function App() {
               lineWidth={lineWidth}
               shapes={shapes}
               onShapesChange={setShapes}
+              onCurrentDrawingChange={setHasCurrentDrawing}
             />
           )}
         </div>
@@ -260,7 +263,7 @@ function App() {
           <button
             className="action-button clear"
             onClick={handleClear}
-            disabled={shapes.length === 0}
+            disabled={shapes.length === 0 && !hasCurrentDrawing}
           >
             クリア
           </button>

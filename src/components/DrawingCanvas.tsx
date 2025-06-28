@@ -11,6 +11,7 @@ interface DrawingCanvasProps {
   lineWidth: number
   shapes: Shape[]
   onShapesChange: (shapes: Shape[]) => void
+  onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 }
 
 function DrawingCanvas({
@@ -20,7 +21,8 @@ function DrawingCanvas({
   selectedTool,
   lineWidth,
   shapes,
-  onShapesChange
+  onShapesChange,
+  onCurrentDrawingChange
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<google.maps.OverlayView | null>(null)
@@ -33,6 +35,22 @@ function DrawingCanvas({
   useEffect(() => {
     shapesRef.current = shapes
   }, [shapes])
+
+  // 現在描画中の状態を親に報告
+  useEffect(() => {
+    const hasDrawing = currentPixelLine.length > 0
+    onCurrentDrawingChange?.(hasDrawing)
+  }, [currentPixelLine, onCurrentDrawingChange])
+
+  // shapesがクリアされたときに現在の描画線もクリア
+  useEffect(() => {
+    if (shapes.length === 0) {
+      setCurrentPixelLine([])
+      setStartPoint(null)
+      setIsMouseDown(false)
+      setActivePointerId(null)
+    }
+  }, [shapes.length])
 
   useEffect(() => {
     const canvas = canvasRef.current
