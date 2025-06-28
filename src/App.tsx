@@ -61,18 +61,20 @@ function App() {
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map)
-
-    google.maps.event.addListener(map, 'center_changed', () => {
-      const center = map.getCenter()
-      if (center) {
-        setCenter({ lat: center.lat(), lng: center.lng() })
-      }
-    })
-
-    google.maps.event.addListener(map, 'zoom_changed', () => {
-      setZoom(map.getZoom() || 15)
-    })
   }, [])
+
+  // 地図の状態を取得するヘルパー関数
+  const getCurrentMapState = useCallback(() => {
+    if (map) {
+      const mapCenter = map.getCenter()
+      const mapZoom = map.getZoom()
+      return {
+        center: mapCenter ? { lat: mapCenter.lat(), lng: mapCenter.lng() } : center,
+        zoom: mapZoom || zoom
+      }
+    }
+    return { center, zoom }
+  }, [map, center, zoom])
 
   const onUnmount = useCallback(() => {
     setMap(null)
@@ -93,7 +95,9 @@ function App() {
 
     setIsSaving(true)
     try {
-      await saveDrawing(drawingId, shapes, center, zoom)
+      // 保存時に現在の地図状態を取得
+      const currentMapState = getCurrentMapState()
+      await saveDrawing(drawingId, shapes, currentMapState.center, currentMapState.zoom)
       alert('Drawing saved successfully!')
     } catch (error) {
       console.error('Failed to save drawing:', error)
