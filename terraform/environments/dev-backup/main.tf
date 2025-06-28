@@ -1,30 +1,23 @@
-# Core infrastructure environment (dev) - WIF-free version
-# This version does not include WIF resources which are managed manually
+# Development environment configuration
 
 terraform {
   required_version = ">= 1.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-  }
 
+  # Development uses GCS backend for CI/CD compatibility
   backend "gcs" {
     # bucket will be specified via -backend-config during init
-    prefix = "rakugaki-map/dev-clean"
+    prefix = "rakugaki-map/dev"
   }
 }
 
 # Variables
 variable "project_id" {
-  description = "GCP Project ID"
+  description = "GCP Project ID for development"
   type        = string
-  default     = "rakugakimap-dev"
 }
 
 variable "region" {
-  description = "Default region for resources"
+  description = "Default region"
   type        = string
   default     = "asia-northeast1"
 }
@@ -33,23 +26,15 @@ variable "billing_account" {
   description = "Billing account ID"
   type        = string
   default     = ""
-  sensitive   = true
 }
 
 variable "allowed_domains" {
   description = "List of allowed domains for API key restrictions"
   type        = list(string)
-  default     = [
-    "localhost:*",
-    "localhost",
-    "127.0.0.1:*",
-    "127.0.0.1",
-    "rakugakimap-dev.web.app",
-    "rakugakimap-dev.firebaseapp.com"
-  ]
+  default     = ["localhost:*", "localhost", "127.0.0.1:*", "127.0.0.1"]
 }
 
-# Firebase variables
+# Firebase variables (fallback values for CI/CD)
 variable "firebase_api_key" {
   description = "Firebase API Key"
   type        = string
@@ -120,4 +105,4 @@ output "project_id" {
   description = "GCP Project ID"
 }
 
-# WIF resources are managed manually and not tracked here
+# WIF outputs are not available since WIF resources are managed manually
