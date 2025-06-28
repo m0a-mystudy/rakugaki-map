@@ -215,7 +215,7 @@ resource "google_project_service" "firebase_management" {
 # Include Secret Manager for CI/CD
 module "secrets" {
   source = "./secrets"
-  
+
   # Pass required variables
   project_id                   = var.project_id
   environment                  = "dev"
@@ -225,7 +225,7 @@ module "secrets" {
   firebase_messaging_sender_id = var.firebase_messaging_sender_id
   firebase_app_id             = var.firebase_app_id
   firebase_ci_token           = var.firebase_ci_token
-  google_maps_api_key         = google_apikeys_key.maps_api_key.key_string
+  maps_api_key_value          = google_apikeys_key.maps_api_key.key_string
 }
 
 # Outputs
