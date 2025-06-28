@@ -420,21 +420,25 @@ gcloud projects remove-iam-policy-binding rakugakimap-dev \
 
 ### 定期メンテナンス
 
-#### 月次実行推奨
+#### 軽量メンテナンス（推奨）
 ```bash
-# 設定のバックアップ
-gcloud iam workload-identity-pools describe github-actions-pool \
-    --location=global \
-    --project=rakugakimap-dev > wif-pool-backup-$(date +%Y%m%d).json
+# 重要な設定のみ記録（attribute-condition）
+./scripts/wif-management.sh backup -p rakugakimap-dev -e dev
 
+# 不要な権限の確認・監査
+./scripts/wif-management.sh list-permissions -p rakugakimap-dev -e dev
+```
+
+#### フルバックアップ（必要時のみ）
+```bash
+# 完全な設定が必要な場合のみ実行
 gcloud iam workload-identity-pools providers describe github-provider \
     --location=global \
     --workload-identity-pool=github-actions-pool \
     --project=rakugakimap-dev > wif-provider-backup-$(date +%Y%m%d).json
-
-# IAM Policy バックアップ
-gcloud projects get-iam-policy rakugakimap-dev > iam-policy-backup-$(date +%Y%m%d).json
 ```
+
+> **注意**: WIF設定は比較的シンプルで、GCPコンソールからも確認できるため、定期的な完全バックアップは通常不要です。
 
 ### WIF管理スクリプト
 
@@ -474,11 +478,13 @@ chmod +x scripts/wif-management.sh
 
 #### スクリプトの安全機能
 
-- **自動バックアップ**: 変更前に設定を自動保存
+- **軽量バックアップ**: 変更前に重要な設定（attribute-condition）を保存
 - **ドライランモード**: 実際の変更前にテスト実行
 - **入力検証**: 不正な形式の入力を防止
 - **確認プロンプト**: 重要な変更時に明示的な確認
-- **ロールバック情報**: エラー時の復旧手順を提供
+- **設定確認**: 現在の状態を簡単に表示
+
+> **バックアップについて**: WIF設定は比較的シンプルで復旧しやすいため、最重要な`attribute-condition`のみを軽量バックアップします。
 
 ### 参考ファイル
 
