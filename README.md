@@ -41,8 +41,14 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars を編集してproject_idを設定
 
-# リソース作成
+# 初回実行（State管理用バケット作成）
 terraform init
+terraform apply -target=google_storage_bucket.terraform_state
+
+# backend.tf を編集してバケット名を設定後、再初期化
+terraform init -migrate-state
+
+# 全リソース作成
 terraform apply
 
 # APIキーの取得

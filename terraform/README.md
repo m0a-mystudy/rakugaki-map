@@ -66,41 +66,55 @@ terraform output -raw api_key
 terraform destroy
 ```
 
-## State管理
+## State管理（重要）
 
-### 現在の設定（ローカルState）
-- デフォルトではStateファイルはローカル（`terraform.tfstate`）に保存されます
-- `.gitignore`で除外されているため、Gitにはコミットされません
-- **個人開発や検証環境向け**
+### 推奨設定：GCSリモートState
 
-### リモートState設定（推奨：チーム開発・本番環境）
+個人開発でもPCの故障やデータ損失を防ぐため、**GCSリモートStateの使用を強く推奨**します。
 
-1. **State保存用のGCSバケット作成**
+#### 初回セットアップ手順
+
+1. **backend.tf の backend ブロックをコメントアウト**
 ```bash
-# state-bucket.tf のコメントを解除してバケットを作成
+# terraform ブロック全体をコメントアウトしてください
+```
+
+2. **State保存用のGCSバケット作成**
+```bash
 terraform apply -target=google_storage_bucket.terraform_state
 ```
 
-2. **backend.tf を編集**
+3. **作成されたバケット名を確認**
+```bash
+terraform output state_bucket_name
+```
+
+4. **backend.tf を編集してバケット名を設定**
 ```hcl
 terraform {
   backend "gcs" {
-    bucket  = "your-project-id-terraform-state"
-    prefix  = "rakugaki-map"
+    bucket = "your-project-id-terraform-state"  # 実際のバケット名に置き換え
+    prefix = "rakugaki-map"
   }
 }
 ```
 
-3. **Stateの移行**
+5. **リモートStateに移行**
 ```bash
 terraform init -migrate-state
+# "yes" と入力して移行を確認
 ```
 
+### GCSリモートStateの利点
+- **自動バックアップ**: Stateファイルの履歴を10世代保持
+- **暗号化**: Google管理の暗号化で安全に保存
+- **ロック機能**: 同時実行を防ぐ自動ロック
+- **データ損失防止**: PCが壊れてもStateは安全
+
 ### State管理のベストプラクティス
-- **開発環境**: ローカルStateでOK
-- **本番環境**: 必ずリモートState（GCS）を使用
-- **チーム開発**: リモートState + State Locking
-- **複数環境**: workspaceまたは異なるprefixを使用
+- **すべての環境でGCSを使用**: 個人開発でもリモートState推奨
+- **バケットの削除防止**: `force_destroy = false` で誤削除を防止
+- **定期的なState確認**: `terraform show` でState内容を確認
 
 ## トラブルシューティング
 

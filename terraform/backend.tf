@@ -1,15 +1,22 @@
-# Remote state configuration (optional)
-# Uncomment and configure this block to use remote state
+# Remote state configuration (RECOMMENDED)
+# GCS backend provides state locking and versioning automatically
 
-# terraform {
-#   backend "gcs" {
-#     bucket  = "your-terraform-state-bucket"
-#     prefix  = "rakugaki-map"
-#   }
-# }
+terraform {
+  backend "gcs" {
+    # bucket = "YOUR_PROJECT_ID-terraform-state"  # Replace with your bucket name
+    prefix = "rakugaki-map"
+  }
+}
 
-# To migrate from local to remote state:
-# 1. Create a GCS bucket for state storage
-# 2. Uncomment the backend configuration above
-# 3. Run: terraform init -migrate-state
-# 4. Confirm the migration when prompted
+# To set up remote state:
+# 1. First, comment out the backend block above
+# 2. Run: terraform apply -target=google_storage_bucket.terraform_state
+# 3. Uncomment the backend block and add your bucket name
+# 4. Run: terraform init -migrate-state
+# 5. Confirm the migration when prompted
+
+# Benefits of GCS backend:
+# - Automatic state locking (prevents concurrent modifications)
+# - State versioning (can recover from corruption)
+# - Secure storage (encrypted at rest)
+# - No local state files to lose
