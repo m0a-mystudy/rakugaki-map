@@ -25,5 +25,11 @@ const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
 
+// 開発環境でFirestoreエミュレーターを使用（オプション）
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FIRESTORE_EMULATOR === 'true') {
+  console.log('🔥 Using Firestore emulator')
+  connectFirestoreEmulator(db, 'localhost', 8080)
+}
+
 // デバッグ: Firestore初期化確認
 console.log('🔥 Firestore initialized:', db.app.name)
