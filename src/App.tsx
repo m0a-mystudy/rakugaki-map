@@ -19,6 +19,8 @@ const defaultCenter = {
 const options = {
   disableDefaultUI: true,
   zoomControl: true,
+  rotateControl: true,
+  tilt: 45,
 }
 
 function App() {
@@ -36,6 +38,9 @@ function App() {
   const [user, setUser] = useState<any>(null)
   const [isLocating, setIsLocating] = useState(false)
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ x: 20, y: 20 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -206,6 +211,50 @@ function App() {
     )
   }
 
+  const handleMenuMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setDragStart({
+      x: e.clientX - menuPosition.x,
+      y: e.clientY - menuPosition.y
+    })
+  }
+
+  const handleMenuMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return
+    setMenuPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    })
+  }
+
+  const handleMenuMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleMenuTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStart({
+      x: touch.clientX - menuPosition.x,
+      y: touch.clientY - menuPosition.y
+    })
+    e.preventDefault()
+  }
+
+  const handleMenuTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return
+    const touch = e.touches[0]
+    setMenuPosition({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    })
+    e.preventDefault()
+  }
+
+  const handleMenuTouchEnd = () => {
+    setIsDragging(false)
+  }
+
   const colors = [
     '#ff4757', // 赤
     '#3742fa', // 青
@@ -244,10 +293,28 @@ function App() {
           )}
         </div>
       </LoadScript>
-      <div className="controls">
+      <div
+        className={`controls ${isDragging ? 'dragging' : ''}`}
+        style={{
+          position: 'absolute',
+          top: `${menuPosition.y}px`,
+          right: 'auto',
+          left: `${menuPosition.x}px`
+        }}
+        onMouseDown={handleMenuMouseDown}
+        onMouseMove={handleMenuMouseMove}
+        onMouseUp={handleMenuMouseUp}
+        onMouseLeave={handleMenuMouseUp}
+        onTouchStart={handleMenuTouchStart}
+        onTouchMove={handleMenuTouchMove}
+        onTouchEnd={handleMenuTouchEnd}
+      >
         <button
           className={`draw-button ${isDrawing ? 'active' : ''}`}
-          onClick={() => setIsDrawing(!isDrawing)}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!isDragging) setIsDrawing(!isDrawing)
+          }}
         >
           {isDrawing ? '描画を終了' : '描画を開始'}
         </button>
@@ -255,21 +322,30 @@ function App() {
         <div className="action-buttons">
           <button
             className="action-button locate"
-            onClick={handleLocateMe}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleLocateMe()
+            }}
             disabled={isLocating}
           >
             {isLocating ? '📍 取得中...' : '📍 現在地'}
           </button>
           <button
             className="action-button clear"
-            onClick={handleClear}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleClear()
+            }}
             disabled={shapes.length === 0 && !hasCurrentDrawing}
           >
             クリア
           </button>
           <button
             className="action-button share"
-            onClick={handleShare}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleShare()
+            }}
           >
             共有
           </button>
