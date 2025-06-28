@@ -301,6 +301,194 @@ service cloud.firestore {
 - 認証状態はセッション中保持される
 - Terraformで一貫したセキュリティ設定を管理
 
+## 🔐 Workload Identity Federation (WIF) 運用
+
+### WIF管理方針
+
+このプロジェクトでは、WIF (Workload Identity Federation) は**手動管理**を採用しています。これはCI/CDサービスアカウントが自身の認証基盤を変更することによるセキュリティリスクを回避するためです。
+
+### 管理分離構造
+
+#### 🔒 手動管理リソース（セキュリティ基盤）
+- `google_iam_workload_identity_pool`
+- `google_iam_workload_identity_pool_provider`  
+- `google_service_account` (github-actions-wif)
+- WIF関連のIAM権限
+
+#### ⚙️ Terraform管理リソース（アプリケーションインフラ）
+- `google_apikeys_key` (Maps API)
+- `google_firestore_database`
+- `google_secret_manager_secret`
+- `google_project_service` (API有効化)
+
+### WIF操作手順
+
+#### 新しいリポジトリの追加
+
+1. **現在の設定確認**
+```bash
+gcloud iam workload-identity-pools providers describe github-provider \
+    --location=global \
+    --workload-identity-pool=github-actions-pool \
+    --project=rakugakimap-dev
+```
+
+2. **リポジトリ条件の更新**
+```bash
+# 複数リポジトリを許可する場合
+gcloud iam workload-identity-pools providers update github-provider \
+    --location=global \
+    --workload-identity-pool=github-actions-pool \
+    --attribute-condition="attribute.repository=='m0a-mystudy/rakugaki-map' || attribute.repository=='m0a-mystudy/new-repo'" \
+    --project=rakugakimap-dev
+```
+
+#### 権限の調整
+
+1. **現在の権限確認**
+```bash
+gcloud projects get-iam-policy rakugakimap-dev \
+    --flatten="bindings[].members" \
+    --filter="bindings.members:github-actions-wif@rakugakimap-dev.iam.gserviceaccount.com"
+```
+
+2. **不要な権限の削除**
+```bash
+gcloud projects remove-iam-policy-binding rakugakimap-dev \
+    --member="serviceAccount:github-actions-wif@rakugakimap-dev.iam.gserviceaccount.com" \
+    --role="roles/unnecessary-role"
+```
+
+3. **必要な権限の追加**
+```bash
+gcloud projects add-iam-policy-binding rakugakimap-dev \
+    --member="serviceAccount:github-actions-wif@rakugakimap-dev.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.admin"
+```
+
+#### 新環境（prod）の追加
+
+1. **Workload Identity Pool作成**
+```bash
+gcloud iam workload-identity-pools create github-actions-pool-prod \
+    --location=global \
+    --display-name="GitHub Actions Pool - Production" \
+    --description="Workload Identity Pool for GitHub Actions (Production)" \
+    --project=rakugakimap-prod
+```
+
+2. **GitHub Provider作成**
+```bash
+gcloud iam workload-identity-pools providers create-oidc github-provider-prod \
+    --location=global \
+    --workload-identity-pool=github-actions-pool-prod \
+    --display-name="GitHub Provider - Production" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+    --attribute-condition="attribute.repository=='m0a-mystudy/rakugaki-map' && attribute.ref=='refs/heads/main'" \
+    --issuer-uri="https://token.actions.githubusercontent.com" \
+    --project=rakugakimap-prod
+```
+
+### WIF運用のベストプラクティス
+
+#### ✅ DO
+- **事前バックアップ**: 変更前に設定をエクスポート
+- **最小権限**: 必要最小限の権限のみ付与
+- **段階的変更**: 一度に大量の変更を避ける
+- **動作確認**: 変更後は必ずGitHub Actionsで動作テスト
+
+#### ❌ DON'T  
+- **権限の過剰付与**: editorやownerなど強力な権限の付与
+- **テストなし変更**: 本番環境での直接変更
+- **バックアップなし**: 設定の事前保存を怠る
+- **一括変更**: 複数の設定を同時に変更
+
+### 緊急時対応
+
+#### 認証エラー発生時
+```bash
+# 1. 一時的権限付与（緊急時のみ）
+gcloud projects add-iam-policy-binding rakugakimap-dev \
+    --member="user:your-email@example.com" \
+    --role="roles/owner"
+
+# 2. 問題解決後の権限削除
+gcloud projects remove-iam-policy-binding rakugakimap-dev \
+    --member="user:your-email@example.com" \
+    --role="roles/owner"
+```
+
+### 定期メンテナンス
+
+#### 月次実行推奨
+```bash
+# 設定のバックアップ
+gcloud iam workload-identity-pools describe github-actions-pool \
+    --location=global \
+    --project=rakugakimap-dev > wif-pool-backup-$(date +%Y%m%d).json
+
+gcloud iam workload-identity-pools providers describe github-provider \
+    --location=global \
+    --workload-identity-pool=github-actions-pool \
+    --project=rakugakimap-dev > wif-provider-backup-$(date +%Y%m%d).json
+
+# IAM Policy バックアップ
+gcloud projects get-iam-policy rakugakimap-dev > iam-policy-backup-$(date +%Y%m%d).json
+```
+
+### WIF管理スクリプト
+
+よく使用されるWIF操作については、安全性を確保したスクリプトを提供しています：
+
+#### 基本的な使用方法
+
+```bash
+# スクリプトに実行権限を付与
+chmod +x scripts/wif-management.sh
+
+# ヘルプを表示
+./scripts/wif-management.sh --help
+```
+
+#### 主要なコマンド
+
+```bash
+# 1. 現在の設定をバックアップ
+./scripts/wif-management.sh backup -p rakugakimap-dev -e dev
+
+# 2. 許可されているリポジトリの確認
+./scripts/wif-management.sh list-repos -p rakugakimap-dev -e dev
+
+# 3. 新しいリポジトリの追加（まずドライランで確認）
+./scripts/wif-management.sh add-repo -p rakugakimap-dev -e dev -r m0a-mystudy/new-repo --dry-run
+
+# 4. 新しいリポジトリの追加（実際の実行）
+./scripts/wif-management.sh add-repo -p rakugakimap-dev -e dev -r m0a-mystudy/new-repo
+
+# 5. サービスアカウントの権限確認
+./scripts/wif-management.sh list-permissions -p rakugakimap-dev -e dev
+
+# 6. 現在のWIF設定全体を表示
+./scripts/wif-management.sh show-config -p rakugakimap-dev -e dev
+```
+
+#### スクリプトの安全機能
+
+- **自動バックアップ**: 変更前に設定を自動保存
+- **ドライランモード**: 実際の変更前にテスト実行
+- **入力検証**: 不正な形式の入力を防止
+- **確認プロンプト**: 重要な変更時に明示的な確認
+- **ロールバック情報**: エラー時の復旧手順を提供
+
+### 参考ファイル
+
+WIF設定の詳細は以下のファイルに保管されています：
+- `terraform/workload-identity.tf.manual`: WIFリソースの定義（参考用）
+- `terraform/main-with-wif.tf.backup`: WIF含む完全な構成（バックアップ）
+- `scripts/wif-management.sh`: WIF操作用スクリプト
+
+> **重要**: これらのファイル中、`.manual`と`.backup`ファイルはTerraformでは実行されません。WIF設定の参考およびバックアップ目的で保管されています。
+
 ## 料金について
 
 ### Google Maps API
