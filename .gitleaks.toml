@@ -1,0 +1,42 @@
+# GitLeaks configuration for detecting secrets
+
+title = "Rakugaki Map Secret Detection"
+
+# Custom rules for API keys and credentials
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+tags = ["google", "api", "key"]
+
+[[rules]]
+id = "firebase-api-key"
+description = "Firebase API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+tags = ["firebase", "api", "key"]
+
+[[rules]]
+id = "generic-secret"
+description = "Generic Secret"
+regex = '''(?i)(secret|password|token|key|credential)["\s]*[:=]["\s]*[a-zA-Z0-9\-_]{8,}'''
+tags = ["secret", "generic"]
+
+# Allowlist for known safe patterns
+[allowlist]
+description = "Allowlist for false positives"
+regexes = [
+  '''placeholder''',
+  '''your_.*_here''',
+  '''example\.com''',
+  '''localhost''',
+  '''127\.0\.0\.1''',
+]
+
+# Paths to ignore
+paths = [
+  '''.secrets.baseline''',
+  '''node_modules/''',
+  '''\.git/''',
+  '''package-lock\.json''',
+  '''\.env\.example''',
+]

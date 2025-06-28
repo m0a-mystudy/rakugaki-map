@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security:scan": "detect-secrets scan --exclude-files '\\.env\\.local$' --exclude-files 'node_modules/'",
+    "security:gitleaks": "gitleaks detect --config .gitleaks.toml",
+    "security:all": "npm run security:scan && npm run security:gitleaks",
+    "precommit": "pre-commit run --all-files"
   },
   "keywords": [],
   "author": "",

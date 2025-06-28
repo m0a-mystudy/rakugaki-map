@@ -1,0 +1,45 @@
+# Pre-commit hooks configuration
+# Prevents accidental commit of credentials and enforces code quality
+
+repos:
+  # Built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # Secrets detection with detect-secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args:
+          - '--baseline'
+          - '.secrets.baseline'
+          - '--exclude-files'
+          - '.*\.lock$'
+          - '--exclude-files'
+          - '.*\.min\.js$'
+        exclude: package-lock.json
+
+  # GitLeaks for comprehensive secret scanning
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # Environment file validation
+  - repo: local
+    hooks:
+      - id: env-file-check
+        name: Check for credentials in env files
+        entry: scripts/check-env-files.sh
+        language: script
+        pass_filenames: false
+        always_run: true
