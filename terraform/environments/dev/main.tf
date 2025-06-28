@@ -2,12 +2,12 @@
 
 terraform {
   required_version = ">= 1.0"
-  
-  # Development uses local state (optional: can use GCS)
-  # backend "gcs" {
-  #   bucket = "your-dev-terraform-state"
-  #   prefix = "rakugaki-map/dev"
-  # }
+
+  # Development uses GCS backend for CI/CD compatibility
+  backend "gcs" {
+    # bucket will be specified via -backend-config during init
+    prefix = "rakugaki-map/dev"
+  }
 }
 
 # Variables
@@ -31,7 +31,7 @@ variable "billing_account" {
 # Use the main module
 module "rakugaki_map" {
   source = "../../"
-  
+
   project_id      = var.project_id
   region          = var.region
   billing_account = var.billing_account
