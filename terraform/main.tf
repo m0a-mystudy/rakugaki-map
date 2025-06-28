@@ -28,12 +28,30 @@ variable "billing_account" {
   # Find yours: gcloud billing accounts list
 }
 
+variable "allowed_domains" {
+  description = "List of allowed domains for API key restrictions"
+  type        = list(string)
+  default     = [
+    "localhost:*",
+    "localhost", 
+    "127.0.0.1:*",
+    "127.0.0.1"
+  ]
+}
+
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
 }
 
 # Enable required APIs
+resource "google_project_service" "apikeys" {
+  service = "apikeys.googleapis.com"
+  
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "maps_api" {
   service = "maps-backend.googleapis.com"
   
@@ -48,6 +66,26 @@ resource "google_project_service" "maps_js_api" {
 
 resource "google_project_service" "places_api" {
   service = "places-backend.googleapis.com"
+  
+  disable_on_destroy = false
+}
+
+# Firebase Authentication API
+resource "google_project_service" "firebase_auth" {
+  service = "firebase.googleapis.com"
+  
+  disable_on_destroy = false
+}
+
+# Firebase Hosting API
+resource "google_project_service" "firebase_hosting" {
+  service = "firebasehosting.googleapis.com"
+  
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "identity_toolkit" {
+  service = "identitytoolkit.googleapis.com"
   
   disable_on_destroy = false
 }
@@ -69,17 +107,12 @@ resource "google_apikeys_key" "maps_api_key" {
     }
     
     browser_key_restrictions {
-      # 開発環境
-      allowed_referrers = [
-        "localhost:*",
-        "localhost",
-        "127.0.0.1:*",
-        "127.0.0.1"
-      ]
+      allowed_referrers = var.allowed_domains
     }
   }
   
   depends_on = [
+    google_project_service.apikeys,
     google_project_service.maps_api,
     google_project_service.maps_js_api,
     google_project_service.places_api
@@ -121,6 +154,34 @@ resource "google_firebaserules_release" "firestore" {
   depends_on = [google_firebaserules_ruleset.firestore]
 }
 
+# Firebase Authentication Config
+resource "google_identity_platform_config" "auth_config" {
+  project = var.project_id
+  
+  # 匿名認証を有効化
+  sign_in {
+    anonymous {
+      enabled = true
+    }
+  }
+  
+  depends_on = [
+    google_project_service.firebase_auth,
+    google_project_service.identity_toolkit
+  ]
+}
+
+# Firebase Management API
+resource "google_project_service" "firebase_management" {
+  service = "firebase.googleapis.com"
+  
+  disable_on_destroy = false
+}
+
+# Note: Firebase Web App and Hosting Site need to be created manually
+# or via Firebase CLI due to Terraform provider limitations
+# Use: firebase init hosting
+
 # Outputs
 output "api_key" {
   value       = google_apikeys_key.maps_api_key.key_string
@@ -136,4 +197,9 @@ output "project_id" {
 output "firestore_database" {
   value       = google_firestore_database.database.name
   description = "Firestore Database Name"
+}
+
+output "hosting_url" {
+  value       = "https://${var.project_id}.web.app"
+  description = "Firebase Hosting URL (available after firebase init hosting)"
 }
