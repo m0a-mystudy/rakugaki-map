@@ -4,6 +4,12 @@ import DrawingCanvas from './components/DrawingCanvas'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
 import { initializeAuth, onAuthChange } from './firebase'
 import type { DrawingTool, Shape } from './types'
+import {
+  MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
+  CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
+  LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
+  TrashIcon, ArrowUpIcon, ArrowRightIcon
+} from './components/Icons'
 import './App.css'
 
 const mapContainerStyle = {
@@ -401,7 +407,7 @@ function App() {
             onClick={toggleMenuMinimize}
             title="メニューを展開"
           >
-            📋
+            <MenuIcon size={24} />
           </button>
         ) : (
           <>
@@ -411,14 +417,14 @@ function App() {
                 onClick={toggleMenuPosition}
                 title="メニュー位置を切り替え"
               >
-                {menuPosition === 'right' ? '↑' : '→'}
+                {menuPosition === 'right' ? <ArrowUpIcon size={16} /> : <ArrowRightIcon size={16} />}
               </button>
               <button
                 className="minimize-toggle"
                 onClick={toggleMenuMinimize}
                 title="メニューを最小化"
               >
-                ➖
+                <MinimizeIcon size={16} />
               </button>
               <button
                 className={`draw-button ${isDrawing ? 'active' : ''}`}
@@ -436,7 +442,8 @@ function App() {
                     onClick={handleLocateMe}
                     disabled={isLocating}
                   >
-                    {isLocating ? '📍 取得中...' : '📍 現在地'}
+                    <LocationIcon size={16} />
+                    {isLocating ? ' 取得中...' : ' 現在地'}
                   </button>
                   <div className="rotation-controls">
                     <button
@@ -444,21 +451,21 @@ function App() {
                       onClick={() => rotateMap(-45)}
                       title="左に45度回転"
                     >
-                      ↺
+                      <RotateLeftIcon size={16} />
                     </button>
                     <button
                       className="action-button rotate-right"
                       onClick={() => rotateMap(45)}
                       title="右に45度回転"
                     >
-                      ↻
+                      <RotateRightIcon size={16} />
                     </button>
                     <button
                       className="action-button reset-rotation"
                       onClick={resetMapRotation}
                       title="回転をリセット"
                     >
-                      🧭
+                      <CompassIcon size={16} />
                     </button>
                   </div>
                   <div className="tilt-controls">
@@ -467,27 +474,28 @@ function App() {
                       onClick={() => adjustTilt(15)}
                       title="チルトアップ（15度）"
                     >
-                      ⬆️
+                      <ChevronUpIcon size={16} />
                     </button>
                     <button
                       className="action-button tilt-down"
                       onClick={() => adjustTilt(-15)}
                       title="チルトダウン（15度）"
                     >
-                      ⬇️
+                      <ChevronDownIcon size={16} />
                     </button>
                     <button
                       className="action-button reset-tilt"
                       onClick={resetTilt}
                       title="チルトリセット（平面表示）"
                     >
-                      📐
+                      <LayersIcon size={16} />
                     </button>
                   </div>
                   <button
                     className="action-button share"
                     onClick={handleShare}
                   >
+                    <ShareIcon size={16} />
                     共有
                   </button>
                 </>
@@ -497,11 +505,13 @@ function App() {
                 onClick={handleClear}
                 disabled={shapes.length === 0 && !hasCurrentDrawing}
               >
+                <TrashIcon size={16} />
                 クリア
               </button>
               {isSaving && (
                 <div className="saving-indicator">
-                  💾 保存中...
+                  <SaveIcon size={16} />
+                  保存中...
                 </div>
               )}
             </div>
@@ -516,35 +526,35 @@ function App() {
                   onClick={() => setSelectedTool('pen')}
                   title="ペン"
                 >
-                  ✏️
+                  <PenIcon size={20} />
                 </button>
                 <button
                   className={`tool-button ${selectedTool === 'line' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('line')}
                   title="直線"
                 >
-                  📏
+                  <LineIcon size={20} />
                 </button>
                 <button
                   className={`tool-button ${selectedTool === 'rectangle' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('rectangle')}
                   title="四角形"
                 >
-                  ◻️
+                  <SquareIcon size={20} />
                 </button>
                 <button
                   className={`tool-button ${selectedTool === 'circle' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('circle')}
                   title="円"
                 >
-                  ⭕
+                  <CircleIcon size={20} />
                 </button>
                 <button
                   className={`tool-button ${selectedTool === 'eraser' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('eraser')}
                   title="消しゴム"
                 >
-                  🧽
+                  <EraserIcon size={20} />
                 </button>
               </div>
             </div>
