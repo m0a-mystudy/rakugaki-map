@@ -10,6 +10,7 @@ import {
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
   TrashIcon, ArrowUpIcon, ArrowRightIcon
 } from './components/Icons'
+import { MAP_CONSTANTS } from './constants/map'
 import './App.css'
 
 const mapContainerStyle = {
@@ -46,8 +47,8 @@ const options: google.maps.MapOptions = {
   mapId: mapId,
   renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
   // Enable rotation and tilt
-  tilt: 45,
-  heading: 0,
+  tilt: MAP_CONSTANTS.DEFAULT_TILT,
+  heading: MAP_CONSTANTS.DEFAULT_HEADING,
   // Enable heading interaction
   headingInteractionEnabled: true,
   tiltInteractionEnabled: true,
@@ -64,7 +65,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false)
   const [lastShapeCount, setLastShapeCount] = useState(0)
   const [center, setCenter] = useState(defaultCenter)
-  const [zoom, setZoom] = useState(15)
+  const [zoom, setZoom] = useState(MAP_CONSTANTS.DEFAULT_ZOOM)
   const [user, setUser] = useState<any>(null)
   const [isLocating, setIsLocating] = useState(false)
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
@@ -212,8 +213,8 @@ function App() {
         setCenter(newCenter)
         if (map) {
           map.panTo(newCenter)
-          map.setZoom(16)
-          setZoom(16)
+          map.setZoom(MAP_CONSTANTS.LOCATE_ZOOM)
+          setZoom(MAP_CONSTANTS.LOCATE_ZOOM)
         }
         setIsLocating(false)
       },
