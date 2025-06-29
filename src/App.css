@@ -22,12 +22,12 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
   background-color: white;
-  padding: 20px;
+  padding: 15px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  min-width: 200px;
+  min-width: 160px;
   /* Prevent text selection in menu but allow button interactions */
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -45,7 +45,7 @@
   right: 0;
   bottom: 0;
   left: auto;
-  width: 320px;
+  width: 240px;
   max-height: 100vh;
   overflow-y: auto;
   border-radius: 0;
@@ -65,11 +65,20 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: flex-start;
-  max-height: 150px;
-  overflow-y: auto;
+  max-height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 0;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
+  gap: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.controls.top::-webkit-scrollbar {
+  display: none;
 }
 
 /* Minimized state - single floating icon */
@@ -127,7 +136,7 @@
 .menu-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -172,14 +181,15 @@
 
 .controls.top .menu-header {
   order: -1;
-  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .controls.top .action-buttons {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .controls.top .rotation-controls,
@@ -192,30 +202,95 @@
 .controls.top .color-section,
 .controls.top .width-section {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls.top .tool-section h3,
+.controls.top .color-section h3,
+.controls.top .width-section h3 {
+  margin-right: 8px;
+  white-space: nowrap;
 }
 
 .controls.top .tool-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .controls.top .color-palette {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .controls.top .width-section {
-  min-width: 200px;
+  min-width: 120px;
+}
+
+.controls.top .width-section .width-slider {
+  width: 80px;
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
   .controls.right {
-    width: 280px;
+    width: 200px;
+  }
+
+  .controls {
+    padding: 10px;
+    gap: 8px;
   }
 
   .controls.top {
-    max-height: 120px;
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .controls.top .tool-section h3,
+  .controls.top .color-section h3,
+  .controls.top .width-section h3 {
+    display: none;
+  }
+
+  .controls.top .tool-buttons {
+    gap: 4px;
+  }
+
+  .controls.top .color-palette {
+    gap: 4px;
+  }
+
+  .controls.top .width-section {
+    min-width: auto;
+  }
+
+  .controls.top .action-buttons {
+    gap: 6px;
+  }
+
+  .draw-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .action-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .tool-button {
+    padding: 6px;
+    font-size: 16px;
+  }
+
+  .color-button {
+    width: 26px;
+    height: 26px;
   }
 
   .menu-toggle,
@@ -223,6 +298,18 @@
     min-width: 35px;
     height: 35px;
     font-size: 14px;
+  }
+
+  .rotation-controls .action-button,
+  .tilt-controls .action-button {
+    min-width: 30px;
+    padding: 6px 2px;
+    font-size: 14px;
+  }
+
+  .controls.top .rotation-controls,
+  .controls.top .tilt-controls {
+    flex-shrink: 0;
   }
 
   .minimized-icon {
@@ -242,11 +329,11 @@
 }
 
 .draw-button {
-  padding: 12px 24px;
+  padding: 10px 16px;
   background-color: #fff;
   border: 2px solid #333;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -285,7 +372,7 @@
 
 .rotation-controls .action-button {
   flex: 1;
-  min-width: 40px;
+  min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
 }
@@ -297,16 +384,16 @@
 
 .tilt-controls .action-button {
   flex: 1;
-  min-width: 40px;
+  min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
 }
 
 .action-button {
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -368,12 +455,12 @@
 .tool-section, .color-section, .width-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
   /* Prevent text selection on headers except for slider value */
@@ -393,17 +480,17 @@ h3 {
 
 .tool-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .tool-button {
-  padding: 10px;
+  padding: 8px;
   border: 2px solid #ddd;
   border-radius: 8px;
   background-color: white;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   transition: all 0.2s ease;
   /* Prevent text selection on buttons */
   -webkit-user-select: none;
@@ -428,10 +515,10 @@ h3 {
 }
 
 .color-button {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }

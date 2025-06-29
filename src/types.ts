@@ -1,4 +1,4 @@
-export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'line'
+export type DrawingTool = 'pen' | 'rectangle' | 'circle' | 'line' | 'eraser'
 
 export interface Point {
   lat: number
