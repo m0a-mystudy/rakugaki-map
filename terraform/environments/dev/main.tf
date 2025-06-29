@@ -44,10 +44,16 @@ variable "allowed_domains" {
     "localhost",
     "127.0.0.1:*",
     "127.0.0.1",
+    "https://localhost:*",
+    "http://localhost:*",
     "rakugakimap-dev.web.app",
+    "https://rakugakimap-dev.web.app",
     "rakugakimap-dev.firebaseapp.com",
+    "https://rakugakimap-dev.firebaseapp.com",
     "rakugakimap-dev--*.web.app",
-    "rakugakimap-dev-*.web.app"
+    "https://rakugakimap-dev--*.web.app",
+    "rakugakimap-dev-*.web.app",
+    "https://rakugakimap-dev-*.web.app"
   ]
 }
 
