@@ -11,6 +11,7 @@ interface DrawingCanvasProps {
   lineWidth: number
   shapes: Shape[]
   onShapesChange: (shapes: Shape[]) => void
+  onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 }
 
 function DrawingCanvas({
@@ -20,7 +21,8 @@ function DrawingCanvas({
   selectedTool,
   lineWidth,
   shapes,
-  onShapesChange
+  onShapesChange,
+  onCurrentDrawingChange
 }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<google.maps.OverlayView | null>(null)
@@ -32,6 +34,30 @@ function DrawingCanvas({
 
   useEffect(() => {
     shapesRef.current = shapes
+  }, [shapes])
+
+  // 現在描画中の状態を親に報告
+  useEffect(() => {
+    const hasDrawing = currentPixelLine.length > 0
+    onCurrentDrawingChange?.(hasDrawing)
+  }, [currentPixelLine, onCurrentDrawingChange])
+
+  // shapesがクリアされたときに現在の描画線もクリア
+  useEffect(() => {
+    if (shapes.length === 0) {
+      setCurrentPixelLine([])
+      setStartPoint(null)
+      setIsMouseDown(false)
+      setActivePointerId(null)
+    }
+  }, [shapes.length])
+
+  // shapesが変更されたときに即座にcanvasを再描画
+  useEffect(() => {
+    if (overlayRef.current) {
+      // Google Maps overlayの再描画を強制実行
+      google.maps.event.trigger(overlayRef.current, 'draw')
+    }
   }, [shapes])
 
   useEffect(() => {
@@ -69,26 +95,33 @@ function DrawingCanvas({
           ctx.fillStyle = shape.color
 
           if (shape.type === 'pen' && shape.points.length > 1) {
-            ctx.beginPath()
-            let firstPoint = true
-            shape.points.forEach((point) => {
+            // Draw each segment with its own line width based on pressure
+            for (let i = 0; i < shape.points.length - 1; i++) {
+              const point = shape.points[i]
+              const nextPoint = shape.points[i + 1]
+
               const latLng = new google.maps.LatLng(point.lat, point.lng)
+              const nextLatLng = new google.maps.LatLng(nextPoint.lat, nextPoint.lng)
               const pixel = projection.fromLatLngToContainerPixel(latLng)
-              if (pixel) {
-                if (firstPoint) {
-                  ctx.moveTo(pixel.x, pixel.y)
-                  firstPoint = false
+              const nextPixel = projection.fromLatLngToContainerPixel(nextLatLng)
+
+              if (pixel && nextPixel) {
+                ctx.beginPath()
+
+                // Apply pressure-based line width
+                if (nextPoint.pressure !== undefined) {
+                  const pressure = Math.max(0.1, Math.min(1.0, nextPoint.pressure))
+                  const dynamicWidth = shape.width * (0.3 + pressure * 0.7)
+                  ctx.lineWidth = dynamicWidth
                 } else {
-                  if (point.pressure !== undefined) {
-                    const pressure = point.pressure
-                    const dynamicWidth = shape.width * (0.3 + pressure * 0.7)
-                    ctx.lineWidth = dynamicWidth
-                  }
-                  ctx.lineTo(pixel.x, pixel.y)
+                  ctx.lineWidth = shape.width
                 }
+
+                ctx.moveTo(pixel.x, pixel.y)
+                ctx.lineTo(nextPixel.x, nextPixel.y)
+                ctx.stroke()
               }
-            })
-            ctx.stroke()
+            }
           } else if (shape.type === 'line' && shape.points.length === 2) {
             ctx.beginPath()
             const startLatLng = new google.maps.LatLng(shape.points[0].lat, shape.points[0].lng)
@@ -139,15 +172,22 @@ function DrawingCanvas({
           ctx.lineJoin = 'round'
 
           if (selectedTool === 'pen' && currentPixelLine.length > 1) {
-            ctx.beginPath()
-            ctx.moveTo(currentPixelLine[0].x, currentPixelLine[0].y)
-            for (let i = 1; i < currentPixelLine.length; i++) {
-              const pressure = currentPixelLine[i].pressure || 0.5
+            // Draw each segment with its own line width based on pressure
+            for (let i = 0; i < currentPixelLine.length - 1; i++) {
+              const point = currentPixelLine[i]
+              const nextPoint = currentPixelLine[i + 1]
+
+              ctx.beginPath()
+
+              // Apply pressure-based line width
+              const pressure = Math.max(0.1, Math.min(1.0, nextPoint.pressure || 0.5))
               const dynamicWidth = lineWidth * (0.3 + pressure * 0.7)
               ctx.lineWidth = dynamicWidth
-              ctx.lineTo(currentPixelLine[i].x, currentPixelLine[i].y)
+
+              ctx.moveTo(point.x, point.y)
+              ctx.lineTo(nextPoint.x, nextPoint.y)
+              ctx.stroke()
             }
-            ctx.stroke()
           } else if (selectedTool === 'line') {
             ctx.beginPath()
             ctx.moveTo(startPoint.x, startPoint.y)
@@ -217,7 +257,12 @@ function DrawingCanvas({
       // PointerEvent - iPad Pencil support
       clientX = e.clientX
       clientY = e.clientY
-      pressure = e.pressure || 0.5
+      // iPad Pencil provides pressure values, ensure we use them properly
+      if (e.pointerType === 'pen') {
+        pressure = e.pressure > 0 ? e.pressure : 0.5
+      } else {
+        pressure = e.pressure || 0.5
+      }
       pointerId = e.pointerId
       type = e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse'
     } else if ('clientX' in e) {

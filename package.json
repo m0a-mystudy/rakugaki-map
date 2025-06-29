@@ -6,8 +6,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
     "dev:emulator": "firebase emulators:start --only firestore",
     "dev:with-emulator": "VITE_USE_FIRESTORE_EMULATOR=true vite",
+    "dev:emulator-host": "VITE_USE_FIRESTORE_EMULATOR=true vite --host",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "bash scripts/deploy.sh",

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { GoogleMap, LoadScript } from '@react-google-maps/api'
+import { GoogleMap, LoadScript, Libraries } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
 import { initializeAuth, onAuthChange } from './firebase'
@@ -16,9 +16,27 @@ const defaultCenter = {
   lng: 139.6503
 }
 
-const options = {
+// Static libraries array to prevent reloading warning
+const libraries: Libraries = ['places']
+
+const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
+  mapTypeControl: false,
+  scaleControl: false,
+  streetViewControl: false,
+  rotateControl: true, // Enable rotate control
+  fullscreenControl: false,
+  // Force vector rendering with proper Map ID
+  mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
+  renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
+  mapTypeId: 'roadmap',
+  // Enable rotation and tilt
+  tilt: 45,
+  heading: 0,
+  // Enable heading interaction
+  headingInteractionEnabled: true,
+  tiltInteractionEnabled: true,
 }
 
 function App() {
@@ -34,6 +52,13 @@ function App() {
   const [center, setCenter] = useState(defaultCenter)
   const [zoom, setZoom] = useState(15)
   const [user, setUser] = useState<any>(null)
+  const [isLocating, setIsLocating] = useState(false)
+  const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ x: 20, y: 20 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [mapHeading, setMapHeading] = useState(0)
+  const [mapTilt, setMapTilt] = useState(45)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -148,6 +173,7 @@ function App() {
   const handleClear = () => {
     if (confirm('すべての描画を削除しますか？')) {
       setShapes([])
+      setHasCurrentDrawing(false)
     }
   }
 
@@ -155,6 +181,210 @@ function App() {
     const url = window.location.href
     navigator.clipboard.writeText(url)
     alert('共有リンクをコピーしました！')
+  }
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert('このブラウザでは位置情報がサポートされていません')
+      return
+    }
+
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+        const newCenter = { lat, lng }
+
+        setCenter(newCenter)
+        if (map) {
+          map.panTo(newCenter)
+          map.setZoom(16)
+          setZoom(16)
+        }
+        setIsLocating(false)
+      },
+      (error) => {
+        console.error('位置情報の取得に失敗しました:', error)
+        let message = '位置情報の取得に失敗しました'
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            message = '位置情報の使用が拒否されました'
+            break
+          case error.POSITION_UNAVAILABLE:
+            message = '位置情報が利用できません'
+            break
+          case error.TIMEOUT:
+            message = '位置情報の取得がタイムアウトしました'
+            break
+        }
+        alert(message)
+        setIsLocating(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    )
+  }
+
+  const handleMenuMouseDown = (e: React.MouseEvent) => {
+    // Don't start dragging if clicking on a button
+    if ((e.target as HTMLElement).tagName === 'BUTTON') {
+      return
+    }
+    setIsDragging(true)
+    setDragStart({
+      x: e.clientX - menuPosition.x,
+      y: e.clientY - menuPosition.y
+    })
+  }
+
+  const handleMenuMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return
+    setMenuPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    })
+  }
+
+  const handleMenuMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleMenuTouchStart = (e: React.TouchEvent) => {
+    // Don't start dragging if touching a button
+    if ((e.target as HTMLElement).tagName === 'BUTTON') {
+      return
+    }
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStart({
+      x: touch.clientX - menuPosition.x,
+      y: touch.clientY - menuPosition.y
+    })
+    e.preventDefault()
+  }
+
+  const handleMenuTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return
+    const touch = e.touches[0]
+    setMenuPosition({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    })
+    e.preventDefault()
+  }
+
+  const handleMenuTouchEnd = () => {
+    setIsDragging(false)
+  }
+
+  const rotateMap = (degrees: number) => {
+    console.log('rotateMap called with degrees:', degrees, 'isDragging:', isDragging)
+    if (!map) {
+      console.error('Map is null')
+      return
+    }
+
+    // Check map methods and rendering type
+    console.log('Map object:', map)
+    console.log('setHeading exists?', typeof map.setHeading)
+    console.log('setTilt exists?', typeof map.setTilt)
+    console.log('getHeading exists?', typeof map.getHeading)
+    console.log('Map rendering type:', map.getRenderingType ? map.getRenderingType() : 'unknown')
+    // Check Map ID if available
+    const mapWithId = map as google.maps.Map & { getMapId?: () => string }
+    console.log('Map ID:', mapWithId.getMapId ? mapWithId.getMapId() : 'no mapId method')
+
+    const currentHeading = typeof map.getHeading === 'function' ? map.getHeading() : 0
+    console.log('Current heading:', currentHeading)
+
+    const newHeading = (mapHeading + degrees) % 360
+    console.log('New heading will be:', newHeading)
+    setMapHeading(newHeading)
+
+    try {
+      // Try different approaches
+      if (typeof map.setHeading === 'function') {
+        console.log('Calling setHeading with:', newHeading)
+        map.setHeading(newHeading)
+        // Also try setting tilt
+        if (typeof map.setTilt === 'function') {
+          map.setTilt(45) // Try with tilt
+        }
+        console.log('After setHeading, heading is:', map.getHeading ? map.getHeading() : 'unknown')
+      } else {
+        console.log('setHeading not available, trying setOptions')
+        map.setOptions({
+          heading: newHeading,
+          tilt: 45
+        })
+      }
+    } catch (error) {
+      console.error('Failed to rotate map:', error)
+    }
+  }
+
+  const resetMapRotation = () => {
+    if (!map) return
+    setMapHeading(0)
+    try {
+      // Use setHeading method for vector maps
+      if (typeof map.setHeading === 'function') {
+        map.setHeading(0)
+        console.log('Reset using setHeading method')
+      } else {
+        // Fallback to setOptions
+        map.setOptions({
+          heading: 0
+        })
+        console.log('Reset using setOptions method')
+      }
+    } catch (error) {
+      console.error('Failed to reset map rotation:', error)
+    }
+  }
+
+  const adjustTilt = (degrees: number) => {
+    console.log('adjustTilt called with degrees:', degrees)
+    if (!map) return
+
+    const newTilt = Math.max(0, Math.min(67.5, mapTilt + degrees)) // Limit tilt between 0-67.5 degrees
+    console.log('New tilt will be:', newTilt)
+    setMapTilt(newTilt)
+
+    try {
+      if (typeof map.setTilt === 'function') {
+        map.setTilt(newTilt)
+        console.log('Tilt set to:', newTilt)
+      } else {
+        map.setOptions({
+          tilt: newTilt
+        })
+      }
+    } catch (error) {
+      console.error('Failed to adjust tilt:', error)
+    }
+  }
+
+  const resetTilt = () => {
+    console.log('resetTilt called')
+    if (!map) return
+
+    setMapTilt(0)
+    try {
+      if (typeof map.setTilt === 'function') {
+        map.setTilt(0)
+      } else {
+        map.setOptions({
+          tilt: 0
+        })
+      }
+    } catch (error) {
+      console.error('Failed to reset tilt:', error)
+    }
   }
 
   const colors = [
@@ -170,7 +400,11 @@ function App() {
 
   return (
     <div className="app">
-      <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+      <LoadScript
+        googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+        version="beta"
+        libraries={libraries}
+      >
         <div className="map-container">
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
@@ -190,29 +424,131 @@ function App() {
               lineWidth={lineWidth}
               shapes={shapes}
               onShapesChange={setShapes}
+              onCurrentDrawingChange={setHasCurrentDrawing}
             />
           )}
         </div>
       </LoadScript>
-      <div className="controls">
+      <div
+        className={`controls ${isDragging ? 'dragging' : ''}`}
+        style={{
+          position: 'absolute',
+          top: `${menuPosition.y}px`,
+          right: 'auto',
+          left: `${menuPosition.x}px`
+        }}
+        onMouseDown={handleMenuMouseDown}
+        onMouseMove={handleMenuMouseMove}
+        onMouseUp={handleMenuMouseUp}
+        onMouseLeave={handleMenuMouseUp}
+        onTouchStart={handleMenuTouchStart}
+        onTouchMove={handleMenuTouchMove}
+        onTouchEnd={handleMenuTouchEnd}
+      >
         <button
           className={`draw-button ${isDrawing ? 'active' : ''}`}
-          onClick={() => setIsDrawing(!isDrawing)}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!isDragging) setIsDrawing(!isDrawing)
+          }}
         >
           {isDrawing ? '描画を終了' : '描画を開始'}
         </button>
 
         <div className="action-buttons">
           <button
+            className="action-button locate"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleLocateMe()
+            }}
+            disabled={isLocating}
+          >
+            {isLocating ? '📍 取得中...' : '📍 現在地'}
+          </button>
+          <div className="rotation-controls">
+            <button
+              className="action-button rotate-left"
+              onClick={(e) => {
+                console.log('Left rotate button clicked')
+                e.stopPropagation()
+                if (!isDragging) rotateMap(-45)
+              }}
+              title="左に45度回転"
+            >
+              ↺
+            </button>
+            <button
+              className="action-button rotate-right"
+              onClick={(e) => {
+                console.log('Right rotate button clicked')
+                e.stopPropagation()
+                if (!isDragging) rotateMap(45)
+              }}
+              title="右に45度回転"
+            >
+              ↻
+            </button>
+            <button
+              className="action-button reset-rotation"
+              onClick={(e) => {
+                console.log('Reset rotation button clicked')
+                e.stopPropagation()
+                if (!isDragging) resetMapRotation()
+              }}
+              title="回転をリセット"
+            >
+              🧭
+            </button>
+          </div>
+          <div className="tilt-controls">
+            <button
+              className="action-button tilt-up"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) adjustTilt(15)
+              }}
+              title="チルトアップ（15度）"
+            >
+              ⬆️
+            </button>
+            <button
+              className="action-button tilt-down"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) adjustTilt(-15)
+              }}
+              title="チルトダウン（15度）"
+            >
+              ⬇️
+            </button>
+            <button
+              className="action-button reset-tilt"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) resetTilt()
+              }}
+              title="チルトリセット（平面表示）"
+            >
+              📐
+            </button>
+          </div>
+          <button
             className="action-button clear"
-            onClick={handleClear}
-            disabled={shapes.length === 0}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleClear()
+            }}
+            disabled={shapes.length === 0 && !hasCurrentDrawing}
           >
             クリア
           </button>
           <button
             className="action-button share"
-            onClick={handleShare}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (!isDragging) handleShare()
+            }}
           >
             共有
           </button>
