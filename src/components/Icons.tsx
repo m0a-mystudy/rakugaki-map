@@ -27,13 +27,15 @@ export const LocationIcon: React.FC<IconProps> = ({ size = 20, color = 'currentC
 
 export const RotateLeftIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M11 20A8 8 0 1019 12m0 0h-7m7 0v-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M1 4v6h6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3.51 15a9 9 0 102.13-9.36L1 10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
 
 export const RotateRightIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M13 20A8 8 0 105 12m0 0h7m-7 0v-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M23 4v6h-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M20.49 15a9 9 0 11-2.13-9.36L23 10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
 
