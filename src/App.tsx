@@ -19,6 +19,15 @@ const defaultCenter = {
 // Static libraries array to prevent reloading warning
 const libraries: Libraries = ['places']
 
+
+// Log environment variables for debugging
+console.log('🗺️ Map configuration:')
+console.log('  VITE_MAP_ID:', import.meta.env.VITE_MAP_ID)
+console.log('  All env vars:', import.meta.env)
+
+const mapId = import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95'
+console.log('  Using mapId:', mapId)
+
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -27,10 +36,9 @@ const options: google.maps.MapOptions = {
   streetViewControl: false,
   rotateControl: true, // Enable rotate control
   fullscreenControl: false,
-  // Force vector rendering with proper Map ID
-  mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
+  // Use custom grayscale map ID from environment variable
+  mapId: mapId,
   renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
-  mapTypeId: 'roadmap',
   // Enable rotation and tilt
   tilt: 45,
   heading: 0,
@@ -386,6 +394,7 @@ function App() {
       console.error('Failed to reset tilt:', error)
     }
   }
+
 
   const colors = [
     '#ff4757', // 赤
