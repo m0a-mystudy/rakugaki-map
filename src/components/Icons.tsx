@@ -91,9 +91,9 @@ export const CircleIcon: React.FC<IconProps> = ({ size = 20, color = 'currentCol
 
 export const EraserIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M7 21h10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M5.7 5.7a1 1 0 011.4 0l11.3 11.3a1 1 0 010 1.4l-2.8 2.8a1 1 0 01-1.4 0L2.9 9.9a1 1 0 010-1.4l2.8-2.8z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M6 9l4 4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="3" y="8" width="18" height="8" rx="2" ry="2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <rect x="5" y="6" width="14" height="4" rx="1" ry="1" fill={color} stroke="none"/>
+    <path d="M8 12h8M8 14h8" stroke="white" strokeWidth="1" strokeLinecap="round"/>
   </svg>
 )
 
