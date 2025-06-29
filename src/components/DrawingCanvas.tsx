@@ -30,6 +30,7 @@ function DrawingCanvas({
   const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number, pressure?: number}[]>([])
   const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
   const [activePointerId, setActivePointerId] = useState<number | null>(null)
+  const [hoverPoint, setHoverPoint] = useState<{x: number, y: number} | null>(null)
   const shapesRef = useRef<Shape[]>([])
 
   useEffect(() => {
@@ -212,19 +213,43 @@ function DrawingCanvas({
             ctx.arc(startPoint.x, startPoint.y, radius, 0, 2 * Math.PI)
             ctx.stroke()
           } else if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
-            // Draw eraser preview
-            ctx.globalCompositeOperation = 'destination-out'
+            // Draw eraser preview circle
+            const eraserRadius = lineWidth * 2
+            const lastPoint = currentPixelLine[currentPixelLine.length - 1]
+
+            // Draw circle outline
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'
+            ctx.lineWidth = 2
             ctx.beginPath()
-            ctx.arc(
-              currentPixelLine[currentPixelLine.length - 1].x,
-              currentPixelLine[currentPixelLine.length - 1].y,
-              lineWidth * 2,
-              0,
-              2 * Math.PI
-            )
-            ctx.fill()
-            ctx.globalCompositeOperation = 'source-over'
+            ctx.arc(lastPoint.x, lastPoint.y, eraserRadius, 0, 2 * Math.PI)
+            ctx.stroke()
+
+            // Draw inner circle
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.arc(lastPoint.x, lastPoint.y, eraserRadius - 1, 0, 2 * Math.PI)
+            ctx.stroke()
           }
+        }
+
+        // Draw hover cursor for eraser when not drawing
+        if (!isMouseDown && selectedTool === 'eraser' && hoverPoint && isDrawing) {
+          const eraserRadius = lineWidth * 2
+
+          // Draw circle outline
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.arc(hoverPoint.x, hoverPoint.y, eraserRadius, 0, 2 * Math.PI)
+          ctx.stroke()
+
+          // Draw inner circle
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.arc(hoverPoint.x, hoverPoint.y, eraserRadius - 1, 0, 2 * Math.PI)
+          ctx.stroke()
         }
       }
 
@@ -247,7 +272,7 @@ function DrawingCanvas({
         overlayRef.current.setMap(null)
       }
     }
-  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth])
+  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth, isMouseDown, hoverPoint, isDrawing])
 
   const pixelToLatLng = (x: number, y: number): google.maps.LatLng | null => {
     const overlay = overlayRef.current
@@ -351,11 +376,18 @@ function DrawingCanvas({
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isMouseDown || activePointerId !== e.pointerId) return
+    if (!isDrawing) return
 
     e.preventDefault()
     const coords = getEventCoordinates(e)
     if (!coords) return
+
+    // Update hover point for eraser cursor
+    if (selectedTool === 'eraser' && !isMouseDown) {
+      setHoverPoint({x: coords.x, y: coords.y})
+    }
+
+    if (!isMouseDown || activePointerId !== e.pointerId) return
 
     if (selectedTool === 'pen' || selectedTool === 'eraser') {
       setCurrentPixelLine(prev => [...prev, coords])
@@ -379,11 +411,18 @@ function DrawingCanvas({
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isMouseDown || activePointerId !== null) return
+    if (!isDrawing) return
 
     e.preventDefault()
     const coords = getEventCoordinates(e)
     if (!coords) return
+
+    // Update hover point for eraser cursor
+    if (selectedTool === 'eraser' && !isMouseDown) {
+      setHoverPoint({x: coords.x, y: coords.y})
+    }
+
+    if (!isMouseDown || activePointerId !== null) return
 
     if (selectedTool === 'pen' || selectedTool === 'eraser') {
       setCurrentPixelLine(prev => [...prev, coords])
@@ -493,11 +532,17 @@ function DrawingCanvas({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseLeave={() => {
+        handleMouseUp()
+        setHoverPoint(null)
+      }}
       onPointerDown={handlePointerStart}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
-      onPointerLeave={handlePointerEnd}
+      onPointerLeave={(e) => {
+        handlePointerEnd(e)
+        setHoverPoint(null)
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
