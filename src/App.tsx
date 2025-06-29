@@ -539,6 +539,13 @@ function App() {
                 >
                   ⭕
                 </button>
+                <button
+                  className={`tool-button ${selectedTool === 'eraser' ? 'active' : ''}`}
+                  onClick={() => setSelectedTool('eraser')}
+                  title="消しゴム"
+                >
+                  🧽
+                </button>
               </div>
             </div>
 

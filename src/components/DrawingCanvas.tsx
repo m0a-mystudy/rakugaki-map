@@ -211,6 +211,19 @@ function DrawingCanvas({
             ctx.beginPath()
             ctx.arc(startPoint.x, startPoint.y, radius, 0, 2 * Math.PI)
             ctx.stroke()
+          } else if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
+            // Draw eraser preview
+            ctx.globalCompositeOperation = 'destination-out'
+            ctx.beginPath()
+            ctx.arc(
+              currentPixelLine[currentPixelLine.length - 1].x,
+              currentPixelLine[currentPixelLine.length - 1].y,
+              lineWidth * 2,
+              0,
+              2 * Math.PI
+            )
+            ctx.fill()
+            ctx.globalCompositeOperation = 'source-over'
           }
         }
       }
@@ -344,7 +357,7 @@ function DrawingCanvas({
     const coords = getEventCoordinates(e)
     if (!coords) return
 
-    if (selectedTool === 'pen') {
+    if (selectedTool === 'pen' || selectedTool === 'eraser') {
       setCurrentPixelLine(prev => [...prev, coords])
     } else {
       setCurrentPixelLine([startPoint!, coords])
@@ -358,7 +371,7 @@ function DrawingCanvas({
     const coords = getEventCoordinates(e)
     if (!coords) return
 
-    if (selectedTool === 'pen') {
+    if (selectedTool === 'pen' || selectedTool === 'eraser') {
       setCurrentPixelLine(prev => [...prev, coords])
     } else {
       setCurrentPixelLine([startPoint!, coords])
@@ -372,7 +385,7 @@ function DrawingCanvas({
     const coords = getEventCoordinates(e)
     if (!coords) return
 
-    if (selectedTool === 'pen') {
+    if (selectedTool === 'pen' || selectedTool === 'eraser') {
       setCurrentPixelLine(prev => [...prev, coords])
     } else {
       setCurrentPixelLine([startPoint!, coords])
@@ -385,7 +398,34 @@ function DrawingCanvas({
     setIsMouseDown(false)
     setActivePointerId(null)
 
-    if (currentPixelLine.length > 1) {
+    if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
+      // Eraser logic: find and remove shapes that intersect with eraser path
+      const eraserRadius = lineWidth * 2
+      const updatedShapes = shapes.filter(shape => {
+        const overlay = overlayRef.current
+        if (!overlay) return true
+        const projection = overlay.getProjection()
+        if (!projection) return true
+
+        // Check each point in the shape against the eraser path
+        for (const eraserPoint of currentPixelLine) {
+          for (const shapePoint of shape.points) {
+            const latLng = new google.maps.LatLng(shapePoint.lat, shapePoint.lng)
+            const pixel = projection.fromLatLngToContainerPixel(latLng)
+            if (pixel) {
+              const distance = Math.sqrt(
+                Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
+              )
+              if (distance <= eraserRadius) {
+                return false // Remove this shape
+              }
+            }
+          }
+        }
+        return true // Keep this shape
+      })
+      onShapesChange(updatedShapes)
+    } else if (currentPixelLine.length > 1) {
       const latLngPoints: { lat: number; lng: number; pressure?: number }[] = []
 
       if (selectedTool === 'pen') {
