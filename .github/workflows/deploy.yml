@@ -50,7 +50,7 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
-            echo "project_id=${{ vars.FIREBASE_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "project_id=${{ vars.PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "project_id=${{ vars.FIREBASE_PROJECT_ID_DEV }}" >> $GITHUB_OUTPUT
@@ -60,8 +60,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ steps.env.outputs.environment == 'prod' && vars.WIF_PROVIDER_PROD || vars.WIF_PROVIDER }}
+          service_account: ${{ steps.env.outputs.environment == 'prod' && vars.WIF_SERVICE_ACCOUNT_PROD || vars.WIF_SERVICE_ACCOUNT }}
 
       # Get secrets from Secret Manager
       - name: Get secrets from Secret Manager
@@ -118,7 +118,7 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
-            echo "project_id=${{ vars.FIREBASE_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "project_id=${{ vars.PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
           else
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "project_id=${{ vars.FIREBASE_PROJECT_ID_DEV }}" >> $GITHUB_OUTPUT
@@ -128,8 +128,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ steps.env.outputs.environment == 'prod' && vars.WIF_PROVIDER_PROD || vars.WIF_PROVIDER }}
+          service_account: ${{ steps.env.outputs.environment == 'prod' && vars.WIF_SERVICE_ACCOUNT_PROD || vars.WIF_SERVICE_ACCOUNT }}
           create_credentials_file: true
 
       # Get Firebase token from Secret Manager
