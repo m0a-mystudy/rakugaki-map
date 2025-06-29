@@ -81,6 +81,12 @@ resource "google_project_service" "firebase_hosting" {
   disable_on_destroy = false
 }
 
+# Firebase App Check API (required for newer Firebase services)
+resource "google_project_service" "firebase_app_check" {
+  service = "firebaseappcheck.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "identity_toolkit" {
   service = "identitytoolkit.googleapis.com"
   disable_on_destroy = false
