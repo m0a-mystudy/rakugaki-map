@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { DrawingTool, Shape } from '../types'
+import type { DrawingTool, Shape, Point } from '../types'
+import { MAP_CONSTANTS } from '../constants/map'
 import './DrawingCanvas.css'
 
 interface DrawingCanvasProps {
@@ -90,7 +91,20 @@ function DrawingCanvas({
 
         shapesRef.current.forEach(shape => {
           ctx.strokeStyle = shape.color
-          ctx.lineWidth = shape.width
+
+          // Apply zoom-based line width scaling
+          if (shape.baseZoom !== undefined && map) {
+            const currentZoom = map.getZoom()
+            if (currentZoom !== undefined) {
+              const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+              ctx.lineWidth = shape.width * zoomScale
+            } else {
+              ctx.lineWidth = shape.width
+            }
+          } else {
+            ctx.lineWidth = shape.width
+          }
+
           ctx.lineCap = 'round'
           ctx.lineJoin = 'round'
           ctx.fillStyle = shape.color
@@ -113,9 +127,31 @@ function DrawingCanvas({
                 if (nextPoint.pressure !== undefined) {
                   const pressure = Math.max(0.1, Math.min(1.0, nextPoint.pressure))
                   const dynamicWidth = shape.width * (0.3 + pressure * 0.7)
-                  ctx.lineWidth = dynamicWidth
+                  // Apply zoom scaling for pen strokes too
+                  if (shape.baseZoom !== undefined && map) {
+                    const currentZoom = map.getZoom()
+                    if (currentZoom !== undefined) {
+                      const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+                      ctx.lineWidth = dynamicWidth * zoomScale
+                    } else {
+                      ctx.lineWidth = dynamicWidth
+                    }
+                  } else {
+                    ctx.lineWidth = dynamicWidth
+                  }
                 } else {
-                  ctx.lineWidth = shape.width
+                  // Apply zoom scaling
+                  if (shape.baseZoom !== undefined && map) {
+                    const currentZoom = map.getZoom()
+                    if (currentZoom !== undefined) {
+                      const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+                      ctx.lineWidth = shape.width * zoomScale
+                    } else {
+                      ctx.lineWidth = shape.width
+                    }
+                  } else {
+                    ctx.lineWidth = shape.width
+                  }
                 }
 
                 ctx.moveTo(pixel.x, pixel.y)
@@ -134,7 +170,36 @@ function DrawingCanvas({
               ctx.lineTo(endPixel.x, endPixel.y)
               ctx.stroke()
             }
+          } else if ((shape.type === 'rectangle' || shape.type === 'circle') && shape.points.length > 2) {
+            // New polygon-based rendering for rectangles and circles
+            ctx.beginPath()
+            let firstX = 0
+            let firstY = 0
+            let hasFirstPoint = false
+
+            shape.points.forEach((point, index) => {
+              const latLng = new google.maps.LatLng(point.lat, point.lng)
+              const pixel = projection.fromLatLngToContainerPixel(latLng)
+
+              if (pixel) {
+                if (index === 0) {
+                  ctx.moveTo(pixel.x, pixel.y)
+                  firstX = pixel.x
+                  firstY = pixel.y
+                  hasFirstPoint = true
+                } else {
+                  ctx.lineTo(pixel.x, pixel.y)
+                }
+              }
+            })
+
+            // Close the path
+            if (hasFirstPoint) {
+              ctx.lineTo(firstX, firstY)
+            }
+            ctx.stroke()
           } else if (shape.type === 'rectangle' && shape.points.length === 2) {
+            // Legacy rectangle rendering for backward compatibility
             const topLeftLatLng = new google.maps.LatLng(shape.points[0].lat, shape.points[0].lng)
             const bottomRightLatLng = new google.maps.LatLng(shape.points[1].lat, shape.points[1].lng)
             const topLeft = projection.fromLatLngToContainerPixel(topLeftLatLng)
@@ -150,6 +215,7 @@ function DrawingCanvas({
               ctx.stroke()
             }
           } else if (shape.type === 'circle' && shape.points.length === 2) {
+            // Legacy circle rendering for backward compatibility
             const centerLatLng = new google.maps.LatLng(shape.points[0].lat, shape.points[0].lng)
             const edgeLatLng = new google.maps.LatLng(shape.points[1].lat, shape.points[1].lng)
             const center = projection.fromLatLngToContainerPixel(centerLatLng)
@@ -283,6 +349,45 @@ function DrawingCanvas({
 
     const point = new google.maps.Point(x, y)
     return projection.fromContainerPixelToLatLng(point)
+  }
+
+  // Helper function to calculate destination point given distance and bearing
+  const calculateDestinationPoint = (from: Point, distance: number, bearing: number): Point => {
+    const R = 6371000 // Earth's radius in meters
+    const lat1 = from.lat * Math.PI / 180
+    const lng1 = from.lng * Math.PI / 180
+    const angularDistance = distance / R
+
+    const lat2 = Math.asin(
+      Math.sin(lat1) * Math.cos(angularDistance) +
+      Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+    )
+
+    const lng2 = lng1 + Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+      Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+    )
+
+    return {
+      lat: lat2 * 180 / Math.PI,
+      lng: lng2 * 180 / Math.PI
+    }
+  }
+
+  // Helper function to calculate distance between two points
+  const calculateDistance = (from: Point, to: Point): number => {
+    const R = 6371000 // Earth's radius in meters
+    const lat1 = from.lat * Math.PI / 180
+    const lat2 = to.lat * Math.PI / 180
+    const dLat = (to.lat - from.lat) * Math.PI / 180
+    const dLng = (to.lng - from.lng) * Math.PI / 180
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1) * Math.cos(lat2) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+    return R * c
   }
 
   const getEventCoordinates = (e: React.MouseEvent | React.PointerEvent | React.TouchEvent) => {
@@ -495,7 +600,8 @@ function DrawingCanvas({
               type: 'pen',
               points: segment,
               color: shape.color,
-              width: shape.width
+              width: shape.width,
+              baseZoom: shape.baseZoom
             })
           })
         } else {
@@ -546,13 +652,29 @@ function DrawingCanvas({
         const endLatLng = pixelToLatLng(endPixel.x, endPixel.y)
 
         if (startLatLng && endLatLng) {
-          latLngPoints.push({
-            lat: startLatLng.lat(),
-            lng: startLatLng.lng()
-          }, {
-            lat: endLatLng.lat(),
-            lng: endLatLng.lng()
-          })
+          const start: Point = { lat: startLatLng.lat(), lng: startLatLng.lng() }
+          const end: Point = { lat: endLatLng.lat(), lng: endLatLng.lng() }
+
+          if (selectedTool === 'rectangle') {
+            // Create 4 corner points for rectangle
+            latLngPoints.push(
+              start,
+              { lat: start.lat, lng: end.lng },
+              end,
+              { lat: end.lat, lng: start.lng }
+            )
+          } else if (selectedTool === 'circle') {
+            // Create polygon points for circle
+            const radius = calculateDistance(start, end)
+            for (let i = 0; i < MAP_CONSTANTS.CIRCLE_SEGMENTS; i++) {
+              const angle = (i * 2 * Math.PI) / MAP_CONSTANTS.CIRCLE_SEGMENTS
+              const point = calculateDestinationPoint(start, radius, angle)
+              latLngPoints.push(point)
+            }
+          } else {
+            // Line tool - keep as is
+            latLngPoints.push(start, end)
+          }
         }
       }
 
@@ -561,7 +683,8 @@ function DrawingCanvas({
           type: selectedTool,
           points: latLngPoints,
           color: selectedColor,
-          width: lineWidth
+          width: lineWidth,
+          baseZoom: map.getZoom()
         }
         onShapesChange([...shapes, newShape])
       }

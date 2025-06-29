@@ -11,6 +11,7 @@ export interface Shape {
   points: Point[]
   color: string
   width: number
+  baseZoom?: number
 }
 
 export interface DrawingData {
