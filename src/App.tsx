@@ -19,6 +19,15 @@ const defaultCenter = {
 // Static libraries array to prevent reloading warning
 const libraries: Libraries = ['places']
 
+
+// Log environment variables for debugging
+console.log('🗺️ Map configuration:')
+console.log('  VITE_MAP_ID:', import.meta.env.VITE_MAP_ID)
+console.log('  All env vars:', import.meta.env)
+
+const mapId = import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95'
+console.log('  Using mapId:', mapId)
+
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -27,10 +36,9 @@ const options: google.maps.MapOptions = {
   streetViewControl: false,
   rotateControl: true, // Enable rotate control
   fullscreenControl: false,
-  // Force vector rendering with proper Map ID
-  mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
+  // Use custom grayscale map ID from environment variable
+  mapId: mapId,
   renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
-  mapTypeId: 'roadmap',
   // Enable rotation and tilt
   tilt: 45,
   heading: 0,
@@ -54,9 +62,8 @@ function App() {
   const [user, setUser] = useState<any>(null)
   const [isLocating, setIsLocating] = useState(false)
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ x: 20, y: 20 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [menuPosition, setMenuPosition] = useState<'right' | 'top'>('right')
+  const [isMenuMinimized, setIsMenuMinimized] = useState(false)
   const [mapHeading, setMapHeading] = useState(0)
   const [mapTilt, setMapTilt] = useState(45)
 
@@ -229,60 +236,17 @@ function App() {
     )
   }
 
-  const handleMenuMouseDown = (e: React.MouseEvent) => {
-    // Don't start dragging if clicking on a button
-    if ((e.target as HTMLElement).tagName === 'BUTTON') {
-      return
-    }
-    setIsDragging(true)
-    setDragStart({
-      x: e.clientX - menuPosition.x,
-      y: e.clientY - menuPosition.y
-    })
+  const toggleMenuPosition = () => {
+    setMenuPosition(prev => prev === 'right' ? 'top' : 'right')
   }
 
-  const handleMenuMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return
-    setMenuPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    })
+  const toggleMenuMinimize = () => {
+    setIsMenuMinimized(prev => !prev)
   }
 
-  const handleMenuMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  const handleMenuTouchStart = (e: React.TouchEvent) => {
-    // Don't start dragging if touching a button
-    if ((e.target as HTMLElement).tagName === 'BUTTON') {
-      return
-    }
-    const touch = e.touches[0]
-    setIsDragging(true)
-    setDragStart({
-      x: touch.clientX - menuPosition.x,
-      y: touch.clientY - menuPosition.y
-    })
-    e.preventDefault()
-  }
-
-  const handleMenuTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return
-    const touch = e.touches[0]
-    setMenuPosition({
-      x: touch.clientX - dragStart.x,
-      y: touch.clientY - dragStart.y
-    })
-    e.preventDefault()
-  }
-
-  const handleMenuTouchEnd = () => {
-    setIsDragging(false)
-  }
 
   const rotateMap = (degrees: number) => {
-    console.log('rotateMap called with degrees:', degrees, 'isDragging:', isDragging)
+    console.log('rotateMap called with degrees:', degrees)
     if (!map) {
       console.error('Map is null')
       return
@@ -387,6 +351,7 @@ function App() {
     }
   }
 
+
   const colors = [
     '#ff4757', // 赤
     '#3742fa', // 青
@@ -429,138 +394,120 @@ function App() {
           )}
         </div>
       </LoadScript>
-      <div
-        className={`controls ${isDragging ? 'dragging' : ''}`}
-        style={{
-          position: 'absolute',
-          top: `${menuPosition.y}px`,
-          right: 'auto',
-          left: `${menuPosition.x}px`
-        }}
-        onMouseDown={handleMenuMouseDown}
-        onMouseMove={handleMenuMouseMove}
-        onMouseUp={handleMenuMouseUp}
-        onMouseLeave={handleMenuMouseUp}
-        onTouchStart={handleMenuTouchStart}
-        onTouchMove={handleMenuTouchMove}
-        onTouchEnd={handleMenuTouchEnd}
-      >
-        <button
-          className={`draw-button ${isDrawing ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (!isDragging) setIsDrawing(!isDrawing)
-          }}
-        >
-          {isDrawing ? '描画を終了' : '描画を開始'}
-        </button>
-
-        <div className="action-buttons">
+      <div className={`controls ${menuPosition} ${isMenuMinimized ? 'minimized' : ''}`}>
+        {isMenuMinimized ? (
           <button
-            className="action-button locate"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!isDragging) handleLocateMe()
-            }}
-            disabled={isLocating}
+            className="minimized-icon"
+            onClick={toggleMenuMinimize}
+            title="メニューを展開"
           >
-            {isLocating ? '📍 取得中...' : '📍 現在地'}
+            📋
           </button>
-          <div className="rotation-controls">
-            <button
-              className="action-button rotate-left"
-              onClick={(e) => {
-                console.log('Left rotate button clicked')
-                e.stopPropagation()
-                if (!isDragging) rotateMap(-45)
-              }}
-              title="左に45度回転"
-            >
-              ↺
-            </button>
-            <button
-              className="action-button rotate-right"
-              onClick={(e) => {
-                console.log('Right rotate button clicked')
-                e.stopPropagation()
-                if (!isDragging) rotateMap(45)
-              }}
-              title="右に45度回転"
-            >
-              ↻
-            </button>
-            <button
-              className="action-button reset-rotation"
-              onClick={(e) => {
-                console.log('Reset rotation button clicked')
-                e.stopPropagation()
-                if (!isDragging) resetMapRotation()
-              }}
-              title="回転をリセット"
-            >
-              🧭
-            </button>
-          </div>
-          <div className="tilt-controls">
-            <button
-              className="action-button tilt-up"
-              onClick={(e) => {
-                e.stopPropagation()
-                if (!isDragging) adjustTilt(15)
-              }}
-              title="チルトアップ（15度）"
-            >
-              ⬆️
-            </button>
-            <button
-              className="action-button tilt-down"
-              onClick={(e) => {
-                e.stopPropagation()
-                if (!isDragging) adjustTilt(-15)
-              }}
-              title="チルトダウン（15度）"
-            >
-              ⬇️
-            </button>
-            <button
-              className="action-button reset-tilt"
-              onClick={(e) => {
-                e.stopPropagation()
-                if (!isDragging) resetTilt()
-              }}
-              title="チルトリセット（平面表示）"
-            >
-              📐
-            </button>
-          </div>
-          <button
-            className="action-button clear"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!isDragging) handleClear()
-            }}
-            disabled={shapes.length === 0 && !hasCurrentDrawing}
-          >
-            クリア
-          </button>
-          <button
-            className="action-button share"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!isDragging) handleShare()
-            }}
-          >
-            共有
-          </button>
-          {isSaving && (
-            <div className="saving-indicator">
-              💾 保存中...
-            </div>
-          )}
-        </div>
-
-        {isDrawing && (
+        ) : (
           <>
+            <div className="menu-header">
+              <button
+                className="menu-toggle"
+                onClick={toggleMenuPosition}
+                title="メニュー位置を切り替え"
+              >
+                {menuPosition === 'right' ? '↑' : '→'}
+              </button>
+              <button
+                className="minimize-toggle"
+                onClick={toggleMenuMinimize}
+                title="メニューを最小化"
+              >
+                ➖
+              </button>
+              <button
+                className={`draw-button ${isDrawing ? 'active' : ''}`}
+                onClick={() => setIsDrawing(!isDrawing)}
+              >
+                {isDrawing ? '描画を終了' : '描画を開始'}
+              </button>
+            </div>
+
+            <div className="action-buttons">
+              {!isDrawing && (
+                <>
+                  <button
+                    className="action-button locate"
+                    onClick={handleLocateMe}
+                    disabled={isLocating}
+                  >
+                    {isLocating ? '📍 取得中...' : '📍 現在地'}
+                  </button>
+                  <div className="rotation-controls">
+                    <button
+                      className="action-button rotate-left"
+                      onClick={() => rotateMap(-45)}
+                      title="左に45度回転"
+                    >
+                      ↺
+                    </button>
+                    <button
+                      className="action-button rotate-right"
+                      onClick={() => rotateMap(45)}
+                      title="右に45度回転"
+                    >
+                      ↻
+                    </button>
+                    <button
+                      className="action-button reset-rotation"
+                      onClick={resetMapRotation}
+                      title="回転をリセット"
+                    >
+                      🧭
+                    </button>
+                  </div>
+                  <div className="tilt-controls">
+                    <button
+                      className="action-button tilt-up"
+                      onClick={() => adjustTilt(15)}
+                      title="チルトアップ（15度）"
+                    >
+                      ⬆️
+                    </button>
+                    <button
+                      className="action-button tilt-down"
+                      onClick={() => adjustTilt(-15)}
+                      title="チルトダウン（15度）"
+                    >
+                      ⬇️
+                    </button>
+                    <button
+                      className="action-button reset-tilt"
+                      onClick={resetTilt}
+                      title="チルトリセット（平面表示）"
+                    >
+                      📐
+                    </button>
+                  </div>
+                  <button
+                    className="action-button share"
+                    onClick={handleShare}
+                  >
+                    共有
+                  </button>
+                </>
+              )}
+              <button
+                className="action-button clear"
+                onClick={handleClear}
+                disabled={shapes.length === 0 && !hasCurrentDrawing}
+              >
+                クリア
+              </button>
+              {isSaving && (
+                <div className="saving-indicator">
+                  💾 保存中...
+                </div>
+              )}
+            </div>
+
+            {isDrawing && (
+              <>
             <div className="tool-section">
               <h3>ツール</h3>
               <div className="tool-buttons">
@@ -620,6 +567,8 @@ function App() {
                 className="width-slider"
               />
             </div>
+              </>
+            )}
           </>
         )}
       </div>
