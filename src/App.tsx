@@ -16,19 +16,19 @@ const defaultCenter = {
   lng: 139.6503
 }
 
-const options = {
+const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
   mapTypeControl: false,
   scaleControl: false,
   streetViewControl: false,
-  rotateControl: false,
+  rotateControl: true, // Enable rotate control
   fullscreenControl: false,
-  // Use vector rendering for rotation support
-  renderingType: 'VECTOR' as google.maps.RenderingType,
+  // Force vector rendering
+  mapId: 'DEMO_MAP_ID', // Use demo map ID for vector features
   mapTypeId: 'roadmap',
   // Enable rotation and tilt
-  tilt: 0,
+  tilt: 45,
   heading: 0,
 }
 
@@ -275,21 +275,40 @@ function App() {
 
   const rotateMap = (degrees: number) => {
     console.log('rotateMap called with degrees:', degrees, 'isDragging:', isDragging)
-    if (!map) return
+    if (!map) {
+      console.error('Map is null')
+      return
+    }
+
+    // Check map methods
+    console.log('Map object:', map)
+    console.log('setHeading exists?', typeof map.setHeading)
+    console.log('setTilt exists?', typeof map.setTilt)
+    console.log('getHeading exists?', typeof map.getHeading)
+
+    const currentHeading = typeof map.getHeading === 'function' ? map.getHeading() : 0
+    console.log('Current heading:', currentHeading)
+
     const newHeading = (mapHeading + degrees) % 360
+    console.log('New heading will be:', newHeading)
     setMapHeading(newHeading)
 
     try {
-      // Use setHeading method for vector maps
+      // Try different approaches
       if (typeof map.setHeading === 'function') {
+        console.log('Calling setHeading with:', newHeading)
         map.setHeading(newHeading)
-        console.log('Used setHeading method')
+        // Also try setting tilt
+        if (typeof map.setTilt === 'function') {
+          map.setTilt(45) // Try with tilt
+        }
+        console.log('After setHeading, heading is:', map.getHeading ? map.getHeading() : 'unknown')
       } else {
-        // Fallback to setOptions
+        console.log('setHeading not available, trying setOptions')
         map.setOptions({
-          heading: newHeading
+          heading: newHeading,
+          tilt: 45
         })
-        console.log('Used setOptions method')
       }
     } catch (error) {
       console.error('Failed to rotate map:', error)
@@ -329,7 +348,11 @@ function App() {
 
   return (
     <div className="app">
-      <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+      <LoadScript
+        googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+        version="weekly"
+        libraries={['places']}
+      >
         <div className="map-container">
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
