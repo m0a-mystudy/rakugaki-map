@@ -65,11 +65,20 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: flex-start;
-  max-height: 150px;
-  overflow-y: auto;
+  max-height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 0;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
+  gap: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.controls.top::-webkit-scrollbar {
+  display: none;
 }
 
 /* Minimized state - single floating icon */
@@ -172,14 +181,15 @@
 
 .controls.top .menu-header {
   order: -1;
-  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .controls.top .action-buttons {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .controls.top .rotation-controls,
@@ -192,20 +202,37 @@
 .controls.top .color-section,
 .controls.top .width-section {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls.top .tool-section h3,
+.controls.top .color-section h3,
+.controls.top .width-section h3 {
+  margin-right: 8px;
+  white-space: nowrap;
 }
 
 .controls.top .tool-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .controls.top .color-palette {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .controls.top .width-section {
-  min-width: 150px;
+  min-width: 120px;
+}
+
+.controls.top .width-section .width-slider {
+  width: 80px;
 }
 
 /* Mobile responsive */
@@ -214,8 +241,56 @@
     width: 200px;
   }
 
+  .controls {
+    padding: 10px;
+    gap: 8px;
+  }
+
   .controls.top {
-    max-height: 120px;
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .controls.top .tool-section h3,
+  .controls.top .color-section h3,
+  .controls.top .width-section h3 {
+    display: none;
+  }
+
+  .controls.top .tool-buttons {
+    gap: 4px;
+  }
+
+  .controls.top .color-palette {
+    gap: 4px;
+  }
+
+  .controls.top .width-section {
+    min-width: auto;
+  }
+
+  .controls.top .action-buttons {
+    gap: 6px;
+  }
+
+  .draw-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .action-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .tool-button {
+    padding: 6px;
+    font-size: 16px;
+  }
+
+  .color-button {
+    width: 26px;
+    height: 26px;
   }
 
   .menu-toggle,
@@ -223,6 +298,18 @@
     min-width: 35px;
     height: 35px;
     font-size: 14px;
+  }
+
+  .rotation-controls .action-button,
+  .tilt-controls .action-button {
+    min-width: 30px;
+    padding: 6px 2px;
+    font-size: 14px;
+  }
+
+  .controls.top .rotation-controls,
+  .controls.top .tilt-controls {
+    flex-shrink: 0;
   }
 
   .minimized-icon {
@@ -285,7 +372,7 @@
 
 .rotation-controls .action-button {
   flex: 1;
-  min-width: 40px;
+  min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
 }
@@ -297,7 +384,7 @@
 
 .tilt-controls .action-button {
   flex: 1;
-  min-width: 40px;
+  min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
 }
