@@ -23,7 +23,11 @@
     "security:scan": "detect-secrets scan --exclude-files '\\.env\\.local$' --exclude-files 'node_modules/'",
     "security:all": "npm run security:scan",
     "precommit": "pre-commit run --all-files",
-    "firestore:rules": "firebase deploy --only firestore:rules"
+    "firestore:rules": "firebase deploy --only firestore:rules",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -38,5 +42,12 @@
     "react-dom": "^19.1.0",
     "typescript": "^5.8.3",
     "vite": "^5.4.10"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "jsdom": "^26.1.0",
+    "vitest": "^3.2.4"
   }
 }
