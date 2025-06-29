@@ -3,6 +3,9 @@ dist/
 .env.local
 .env.production
 
+# Test coverage
+coverage/
+
 # Terraform sensitive files
 terraform.tfvars.local
 *.tfvars.local

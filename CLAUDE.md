@@ -166,10 +166,36 @@ The application supports both manual and automated deployment to Firebase Hostin
 
 ### Testing Approach
 
-Currently no tests. When adding tests:
-- Mock Google Maps API for DrawingCanvas tests
-- Mock Firebase for service layer tests
-- Focus on coordinate transformation logic as it's most complex
+**Testing Framework**: Vitest with React Testing Library
+
+**Available Commands**:
+```bash
+npm test              # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:ui       # Run tests with UI
+npm run test:coverage # Run tests with coverage report
+```
+
+**Current Test Coverage**:
+- ✅ `coordinateUtils.ts`: Geographic coordinate calculations and transformations
+- ✅ `mapUtils.ts`: Google Maps integration and controls
+- 🚧 Component tests: In progress
+- 🚧 Service layer tests: Planned
+
+**Test Structure**:
+```
+src/
+├── test/setup.ts              # Test configuration and mocks
+├── utils/__tests__/
+│   ├── coordinateUtils.test.ts # Geographic calculations (17 tests)
+│   └── mapUtils.test.ts       # Map controls (24 tests)
+└── components/__tests__/      # Component tests (planned)
+```
+
+**Mocking Strategy**:
+- **Google Maps API**: Mocked in test setup with simplified projection
+- **Firebase**: Manual mocks for service layer tests
+- **Environment**: Handled via vitest.config.ts
 
 ## Infrastructure Management
 

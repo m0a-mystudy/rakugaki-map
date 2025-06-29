@@ -94,16 +94,10 @@ variable "firebase_ci_token" {
 module "rakugaki_map" {
   source = "../../"
 
-  project_id                     = var.project_id
-  region                        = var.region
-  billing_account               = var.billing_account
-  allowed_domains               = var.allowed_domains
-  firebase_api_key             = var.firebase_api_key
-  firebase_auth_domain         = var.firebase_auth_domain
-  firebase_storage_bucket      = var.firebase_storage_bucket
-  firebase_messaging_sender_id = var.firebase_messaging_sender_id
-  firebase_app_id              = var.firebase_app_id
-  firebase_ci_token            = var.firebase_ci_token
+  project_id      = var.project_id
+  region          = var.region
+  billing_account = var.billing_account
+  allowed_domains = var.allowed_domains
 }
 
 # Outputs
