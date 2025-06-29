@@ -141,49 +141,19 @@ jobs:
         run: |
           firebase deploy --only hosting --project ${{ steps.env.outputs.project_id }}
 
-      - name: Comment deployment URL
-        uses: actions/github-script@v7
+      - name: Output deployment summary
         if: github.event_name == 'push'
-        with:
-          script: |
-            const environment = '${{ steps.env.outputs.environment }}';
-            const projectId = '${{ steps.env.outputs.project_id }}';
-            const deploymentUrl = `https://${projectId}.web.app`;
-            const envDisplay = environment === 'prod' ? 'Production' : 'Development';
-            const emoji = environment === 'prod' ? '🚀' : '🧪';
+        run: |
+          environment="${{ steps.env.outputs.environment }}"
+          project_id="${{ steps.env.outputs.project_id }}"
+          deployment_url="https://${project_id}.web.app"
+          env_display=$([ "$environment" = "prod" ] && echo "Production" || echo "Development")
+          emoji=$([ "$environment" = "prod" ] && echo "🚀" || echo "🧪")
 
-            // Create deployment comment
-            const { data: comments } = await github.rest.repos.listCommentsForCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-            });
-
-            const existingComment = comments.find(comment =>
-              comment.body.includes('Deployment successful') && comment.body.includes(envDisplay)
-            );
-
-            const body = `${emoji} **Deployment successful!**\n\n` +
-              `**${envDisplay} URL**: ${deploymentUrl}\n\n` +
-              `Deployed commit: \`${context.sha.substr(0, 7)}\`\n` +
-              `Environment: ${envDisplay}\n` +
-              `Branch: \`${context.ref.replace('refs/heads/', '')}\``;
-
-            if (existingComment) {
-              await github.rest.repos.updateCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existingComment.id,
-                body: body
-              });
-            } else {
-              await github.rest.repos.createCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: context.sha,
-                body: body
-              });
-            }
+          echo "::notice title=Deployment Successful::${emoji} ${env_display} deployment completed successfully!"
+          echo "::notice title=Deployment URL::${deployment_url}"
+          echo "::notice title=Environment::${env_display}"
+          echo "::notice title=Deployed Commit::${GITHUB_SHA:0:7}"
 
   preview:
     name: Deploy Preview (PR)
