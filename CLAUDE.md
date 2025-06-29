@@ -5,9 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-npm run dev      # Start development server (Vite) at http://localhost:5173
-npm run build    # Run TypeScript check and build for production
-npm run preview  # Preview production build locally
+npm run dev                # Start development server (Vite) at http://localhost:5173
+npm run dev:host           # Start dev server accessible from network (--host)
+npm run dev:emulator       # Start Firestore emulator only
+npm run dev:with-emulator  # Start dev server with Firestore emulator
+npm run dev:emulator-host  # Start dev server with emulator accessible from network
+npm run build              # Run TypeScript check and build for production
+npm run preview            # Preview production build locally
 ```
 
 ## Architecture Overview
@@ -19,6 +23,9 @@ This is a map-based drawing application where users can draw on Google Maps and 
 1. **Drawing Implementation**: Uses Google Maps OverlayView with HTML Canvas
    - Drawing coordinates are stored as lat/lng pairs, not pixels
    - This ensures drawings remain in the correct position when map moves/zooms
+   - Advanced pen pressure support for iPad Pencil and other stylus devices
+   - Multi-touch handling with Pointer API for optimal device compatibility
+   - Vector map rendering enabled with rotation and tilt capabilities
    - See `DrawingCanvas.tsx` for the coordinate transformation logic
 
 2. **State Management**: Local React state (no Redux/Context)
@@ -52,11 +59,13 @@ App.tsx
 
 ### Drawing Data Flow
 
-1. User draws on canvas → Mouse events captured in pixel coordinates
+1. User draws on canvas → Pointer/Touch/Mouse events captured with pressure data
 2. Pixels converted to lat/lng using Google Maps projection
-3. Shape objects created with geographic coordinates
-4. On save: Anonymous authentication → Shape[] → Firestore document (with auth check)
-5. On load: Firestore → Shape[] → Canvas redraw with lat/lng → pixel conversion
+3. Shape objects created with geographic coordinates and pressure information
+4. Pressure-sensitive rendering with dynamic line width based on stylus pressure
+5. On save: Anonymous authentication → Shape[] → Firestore document (with auth check)
+6. On load: Firestore → Shape[] → Canvas redraw with lat/lng → pixel conversion
+7. Map controls: Rotation (45° increments), tilt adjustment (0-67.5°), reset functions
 
 ### Environment Setup Requirements
 
@@ -137,13 +146,23 @@ The application supports both manual and automated deployment to Firebase Hostin
 - **State Management**: Separate GCS buckets for Terraform state
 - **Secret Access**: Direct via WIF and `gcloud secrets versions access`
 
-### Current Limitations & Future Work
+### Current Features & Limitations
 
-1. **No auto-save**: Users must manually click save
-2. **No real-time collaboration**: Uses Firestore but not real-time listeners
-3. **Anonymous-only authentication**: Could add Google/GitHub login for persistent identity
-4. **No drawing deletion**: Can only clear all or nothing
-5. **Bundle size**: Firebase adds ~200KB to bundle
+**✅ Implemented Features**:
+- Pen pressure sensitivity for iPad Pencil and compatible stylus devices
+- Multi-touch gesture handling with Pointer API prioritization
+- Map rotation controls (45° increments) with visual compass reset
+- Map tilt adjustment (0-67.5°) with up/down controls and flat reset
+- Vector map rendering with proper Map ID for rotation support
+- Draggable floating control panel for better UX
+- Auto-save on drawing completion with authentication check
+- Firestore emulator support for local development
+
+**⚠️ Current Limitations**:
+1. **No real-time collaboration**: Uses Firestore but not real-time listeners
+2. **Anonymous-only authentication**: Could add Google/GitHub login for persistent identity
+3. **No drawing deletion**: Can only clear all or nothing
+4. **Bundle size**: Firebase adds ~200KB to bundle
 
 ### Testing Approach
 
@@ -189,6 +208,15 @@ terraform output -raw api_key
 
 # Firebase config from Secret Manager
 gcloud secrets versions access latest --secret="firebase-api-key-dev"  # pragma: allowlist secret
+```
+
+**Security and Quality Commands**:
+```bash
+npm run security:scan       # Run detect-secrets scan for sensitive data
+npm run security:gitleaks   # Run gitleaks for secret detection
+npm run security:all        # Run both security scans
+npm run precommit           # Run pre-commit hooks on all files
+npm run firestore:rules     # Deploy Firestore security rules only
 ```
 
 **Manual Resource Management**:
