@@ -375,6 +375,7 @@
   min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
+  justify-content: center;
 }
 
 .tilt-controls {
@@ -387,6 +388,7 @@
   min-width: 35px;
   padding: 8px 4px;
   font-size: 16px;
+  justify-content: center;
 }
 
 .action-button {
@@ -398,6 +400,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   /* Prevent text selection on buttons */
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -417,7 +422,7 @@
 .saving-indicator {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 8px 12px;
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -492,6 +497,9 @@ h3 {
   cursor: pointer;
   font-size: 18px;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   /* Prevent text selection on buttons */
   -webkit-user-select: none;
   -moz-user-select: none;
