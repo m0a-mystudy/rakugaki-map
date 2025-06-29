@@ -19,6 +19,16 @@ const defaultCenter = {
 // Static libraries array to prevent reloading warning
 const libraries: Libraries = ['places']
 
+// Grayscale map style for black and white mode
+const grayscaleMapStyle: google.maps.MapTypeStyle[] = [
+  {
+    stylers: [
+      { saturation: -100 }, // Remove all color saturation
+      { lightness: 10 }     // Slightly brighten for better visibility
+    ]
+  }
+]
+
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -27,10 +37,9 @@ const options: google.maps.MapOptions = {
   streetViewControl: false,
   rotateControl: true, // Enable rotate control
   fullscreenControl: false,
-  // Force vector rendering with proper Map ID
-  mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
+  // Use custom grayscale map ID from environment variable
+  mapId: import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95', // Fallback to demo ID
   renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
-  mapTypeId: 'roadmap',
   // Enable rotation and tilt
   tilt: 45,
   heading: 0,
@@ -386,6 +395,7 @@ function App() {
       console.error('Failed to reset tilt:', error)
     }
   }
+
 
   const colors = [
     '#ff4757', // 赤

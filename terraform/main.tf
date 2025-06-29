@@ -69,6 +69,9 @@ resource "google_project_service" "places_api" {
   disable_on_destroy = false
 }
 
+# Note: Maps Platform Map Style API is not available via Terraform
+# Custom map styles must be created manually in Google Cloud Console
+
 # Firebase Authentication API
 resource "google_project_service" "firebase_auth" {
   service = "firebase.googleapis.com"
@@ -166,6 +169,22 @@ resource "google_identity_platform_config" "auth_config" {
   ]
 }
 
+# Custom map style configuration
+# Note: Custom map styles must be created manually in Google Cloud Console
+# Steps to create a custom grayscale map style:
+# 1. Go to Google Cloud Console > Maps Platform > Map Styles
+# 2. Create a new map style with grayscale/monochrome settings
+# 3. Create a map ID and associate it with the style
+# 4. Replace the map_id value below with your custom map ID
+locals {
+  # Temporary placeholder - replace with actual custom map ID from Cloud Console
+  # Current: Using demo map ID that supports vector rendering
+  grayscale_map_id = "8e0a97af9e0a7f95"
+
+  # Once custom map style is created, update this value:
+  # grayscale_map_id = "your-custom-grayscale-map-id-here"
+}
+
 # Firebase Management API
 resource "google_project_service" "firebase_management" {
   service = "firebase.googleapis.com"
@@ -195,4 +214,10 @@ output "firestore_database" {
 output "hosting_url" {
   value       = "https://${var.project_id}.web.app"
   description = "Firebase Hosting URL (available after firebase init hosting)"
+}
+
+output "grayscale_map_id" {
+  value       = local.grayscale_map_id
+  description = "Custom Grayscale Map Style ID"
+  sensitive   = false
 }
