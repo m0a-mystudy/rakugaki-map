@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
 import { useAuthManager } from './hooks/useAuthManager'
@@ -6,7 +7,7 @@ import { useDrawing } from './hooks/useDrawing'
 import { useMenu } from './hooks/useMenu'
 import { createMapOptions } from './utils/mapUtils'
 import { DRAWING_COLORS } from './constants/drawing'
-import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
+import { MAP_CONTAINER_STYLE, DEFAULT_CENTER, LIBRARIES } from './constants/googleMaps'
 import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
@@ -67,7 +68,8 @@ function App() {
     toggleMenuMinimize
   } = useMenu()
 
-  const mapOptions = createMapOptions(center, zoom)
+  // Create map options only once to avoid renderingType error
+  const mapOptions = useMemo(() => createMapOptions(DEFAULT_CENTER, 15), [])
 
   return (
     <div className="app">
