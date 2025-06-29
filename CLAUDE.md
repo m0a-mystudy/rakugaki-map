@@ -213,8 +213,7 @@ gcloud secrets versions access latest --secret="firebase-api-key-dev"  # pragma:
 **Security and Quality Commands**:
 ```bash
 npm run security:scan       # Run detect-secrets scan for sensitive data
-npm run security:gitleaks   # Run gitleaks for secret detection
-npm run security:all        # Run both security scans
+npm run security:all        # Run all security scans
 npm run precommit           # Run pre-commit hooks on all files
 npm run firestore:rules     # Deploy Firestore security rules only
 ```

@@ -197,8 +197,7 @@ npm run preview            # プロダクションビルドをローカルでプ
 
 ```bash
 npm run security:scan       # detect-secrets スキャン実行
-npm run security:gitleaks   # gitleaks でシークレット検出
-npm run security:all        # 両方のセキュリティスキャンを実行
+npm run security:all        # セキュリティスキャンを実行
 npm run precommit           # pre-commit フック全実行
 npm run firestore:rules     # Firestore セキュリティルールのみデプロイ
 ```
