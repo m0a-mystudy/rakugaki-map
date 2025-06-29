@@ -438,31 +438,93 @@ function DrawingCanvas({
     setActivePointerId(null)
 
     if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
-      // Eraser logic: find and remove shapes that intersect with eraser path
+      // Eraser logic: handle partial erasing for pen strokes
       const eraserRadius = lineWidth * 2
-      const updatedShapes = shapes.filter(shape => {
-        const overlay = overlayRef.current
-        if (!overlay) return true
-        const projection = overlay.getProjection()
-        if (!projection) return true
+      const overlay = overlayRef.current
+      if (!overlay) return
+      const projection = overlay.getProjection()
+      if (!projection) return
 
-        // Check each point in the shape against the eraser path
-        for (const eraserPoint of currentPixelLine) {
-          for (const shapePoint of shape.points) {
-            const latLng = new google.maps.LatLng(shapePoint.lat, shapePoint.lng)
+      const updatedShapes: Shape[] = []
+
+      shapes.forEach(shape => {
+        if (shape.type === 'pen' && shape.points.length > 1) {
+          // For pen strokes, implement partial erasing
+          const segments: { lat: number; lng: number; pressure?: number }[][] = []
+          let currentSegment: { lat: number; lng: number; pressure?: number }[] = []
+
+          for (let i = 0; i < shape.points.length; i++) {
+            const point = shape.points[i]
+            const latLng = new google.maps.LatLng(point.lat, point.lng)
             const pixel = projection.fromLatLngToContainerPixel(latLng)
+
             if (pixel) {
-              const distance = Math.sqrt(
-                Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
-              )
-              if (distance <= eraserRadius) {
-                return false // Remove this shape
+              let isErased = false
+
+              // Check if this point intersects with any eraser point
+              for (const eraserPoint of currentPixelLine) {
+                const distance = Math.sqrt(
+                  Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
+                )
+                if (distance <= eraserRadius) {
+                  isErased = true
+                  break
+                }
+              }
+
+              if (!isErased) {
+                currentSegment.push(point)
+              } else {
+                // Point is erased, save current segment if it has points
+                if (currentSegment.length > 1) {
+                  segments.push(currentSegment)
+                }
+                currentSegment = []
               }
             }
           }
+
+          // Don't forget the last segment
+          if (currentSegment.length > 1) {
+            segments.push(currentSegment)
+          }
+
+          // Create new shapes from segments
+          segments.forEach(segment => {
+            updatedShapes.push({
+              type: 'pen',
+              points: segment,
+              color: shape.color,
+              width: shape.width
+            })
+          })
+        } else {
+          // For other shapes (rectangle, circle, line), check for intersection
+          let shouldKeep = true
+
+          for (const eraserPoint of currentPixelLine) {
+            for (const shapePoint of shape.points) {
+              const latLng = new google.maps.LatLng(shapePoint.lat, shapePoint.lng)
+              const pixel = projection.fromLatLngToContainerPixel(latLng)
+              if (pixel) {
+                const distance = Math.sqrt(
+                  Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
+                )
+                if (distance <= eraserRadius) {
+                  shouldKeep = false
+                  break
+                }
+              }
+            }
+            if (!shouldKeep) break
+          }
+
+          if (shouldKeep) {
+            updatedShapes.push(shape)
+          }
         }
-        return true // Keep this shape
       })
+
       onShapesChange(updatedShapes)
     } else if (currentPixelLine.length > 1) {
       const latLngPoints: { lat: number; lng: number; pressure?: number }[] = []
