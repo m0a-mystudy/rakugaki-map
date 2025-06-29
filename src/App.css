@@ -22,12 +22,12 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
   background-color: white;
-  padding: 20px;
+  padding: 15px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  min-width: 200px;
+  min-width: 160px;
   /* Prevent text selection in menu but allow button interactions */
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -45,7 +45,7 @@
   right: 0;
   bottom: 0;
   left: auto;
-  width: 320px;
+  width: 240px;
   max-height: 100vh;
   overflow-y: auto;
   border-radius: 0;
@@ -127,7 +127,7 @@
 .menu-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -205,13 +205,13 @@
 }
 
 .controls.top .width-section {
-  min-width: 200px;
+  min-width: 150px;
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
   .controls.right {
-    width: 280px;
+    width: 200px;
   }
 
   .controls.top {
@@ -242,11 +242,11 @@
 }
 
 .draw-button {
-  padding: 12px 24px;
+  padding: 10px 16px;
   background-color: #fff;
   border: 2px solid #333;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -303,10 +303,10 @@
 }
 
 .action-button {
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -368,12 +368,12 @@
 .tool-section, .color-section, .width-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
   /* Prevent text selection on headers except for slider value */
@@ -393,17 +393,17 @@ h3 {
 
 .tool-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .tool-button {
-  padding: 10px;
+  padding: 8px;
   border: 2px solid #ddd;
   border-radius: 8px;
   background-color: white;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   transition: all 0.2s ease;
   /* Prevent text selection on buttons */
   -webkit-user-select: none;
@@ -428,10 +428,10 @@ h3 {
 }
 
 .color-button {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
