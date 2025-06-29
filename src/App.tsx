@@ -58,6 +58,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [mapHeading, setMapHeading] = useState(0)
+  const [mapTilt, setMapTilt] = useState(45)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -346,6 +347,46 @@ function App() {
     }
   }
 
+  const adjustTilt = (degrees: number) => {
+    console.log('adjustTilt called with degrees:', degrees)
+    if (!map) return
+
+    const newTilt = Math.max(0, Math.min(67.5, mapTilt + degrees)) // Limit tilt between 0-67.5 degrees
+    console.log('New tilt will be:', newTilt)
+    setMapTilt(newTilt)
+
+    try {
+      if (typeof map.setTilt === 'function') {
+        map.setTilt(newTilt)
+        console.log('Tilt set to:', newTilt)
+      } else {
+        map.setOptions({
+          tilt: newTilt
+        })
+      }
+    } catch (error) {
+      console.error('Failed to adjust tilt:', error)
+    }
+  }
+
+  const resetTilt = () => {
+    console.log('resetTilt called')
+    if (!map) return
+
+    setMapTilt(0)
+    try {
+      if (typeof map.setTilt === 'function') {
+        map.setTilt(0)
+      } else {
+        map.setOptions({
+          tilt: 0
+        })
+      }
+    } catch (error) {
+      console.error('Failed to reset tilt:', error)
+    }
+  }
+
   const colors = [
     '#ff4757', // 赤
     '#3742fa', // 青
@@ -458,6 +499,38 @@ function App() {
               title="回転をリセット"
             >
               🧭
+            </button>
+          </div>
+          <div className="tilt-controls">
+            <button
+              className="action-button tilt-up"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) adjustTilt(15)
+              }}
+              title="チルトアップ（15度）"
+            >
+              ⬆️
+            </button>
+            <button
+              className="action-button tilt-down"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) adjustTilt(-15)
+              }}
+              title="チルトダウン（15度）"
+            >
+              ⬇️
+            </button>
+            <button
+              className="action-button reset-tilt"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDragging) resetTilt()
+              }}
+              title="チルトリセット（平面表示）"
+            >
+              📐
             </button>
           </div>
           <button
