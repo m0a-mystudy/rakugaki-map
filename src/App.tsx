@@ -65,7 +65,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false)
   const [lastShapeCount, setLastShapeCount] = useState(0)
   const [center, setCenter] = useState(defaultCenter)
-  const [zoom, setZoom] = useState(MAP_CONSTANTS.DEFAULT_ZOOM)
+  const [zoom, setZoom] = useState<number>(MAP_CONSTANTS.DEFAULT_ZOOM)
   const [user, setUser] = useState<any>(null)
   const [isLocating, setIsLocating] = useState(false)
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)

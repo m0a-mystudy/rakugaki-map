@@ -95,8 +95,12 @@ function DrawingCanvas({
           // Apply zoom-based line width scaling
           if (shape.baseZoom !== undefined && map) {
             const currentZoom = map.getZoom()
-            const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
-            ctx.lineWidth = shape.width * zoomScale
+            if (currentZoom !== undefined) {
+              const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+              ctx.lineWidth = shape.width * zoomScale
+            } else {
+              ctx.lineWidth = shape.width
+            }
           } else {
             ctx.lineWidth = shape.width
           }
@@ -126,8 +130,12 @@ function DrawingCanvas({
                   // Apply zoom scaling for pen strokes too
                   if (shape.baseZoom !== undefined && map) {
                     const currentZoom = map.getZoom()
-                    const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
-                    ctx.lineWidth = dynamicWidth * zoomScale
+                    if (currentZoom !== undefined) {
+                      const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+                      ctx.lineWidth = dynamicWidth * zoomScale
+                    } else {
+                      ctx.lineWidth = dynamicWidth
+                    }
                   } else {
                     ctx.lineWidth = dynamicWidth
                   }
@@ -135,8 +143,12 @@ function DrawingCanvas({
                   // Apply zoom scaling
                   if (shape.baseZoom !== undefined && map) {
                     const currentZoom = map.getZoom()
-                    const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
-                    ctx.lineWidth = shape.width * zoomScale
+                    if (currentZoom !== undefined) {
+                      const zoomScale = Math.pow(2, currentZoom - shape.baseZoom)
+                      ctx.lineWidth = shape.width * zoomScale
+                    } else {
+                      ctx.lineWidth = shape.width
+                    }
                   } else {
                     ctx.lineWidth = shape.width
                   }
@@ -161,7 +173,9 @@ function DrawingCanvas({
           } else if ((shape.type === 'rectangle' || shape.type === 'circle') && shape.points.length > 2) {
             // New polygon-based rendering for rectangles and circles
             ctx.beginPath()
-            let firstPixel: google.maps.Point | null = null
+            let firstX = 0
+            let firstY = 0
+            let hasFirstPoint = false
 
             shape.points.forEach((point, index) => {
               const latLng = new google.maps.LatLng(point.lat, point.lng)
@@ -170,7 +184,9 @@ function DrawingCanvas({
               if (pixel) {
                 if (index === 0) {
                   ctx.moveTo(pixel.x, pixel.y)
-                  firstPixel = pixel
+                  firstX = pixel.x
+                  firstY = pixel.y
+                  hasFirstPoint = true
                 } else {
                   ctx.lineTo(pixel.x, pixel.y)
                 }
@@ -178,8 +194,8 @@ function DrawingCanvas({
             })
 
             // Close the path
-            if (firstPixel) {
-              ctx.lineTo(firstPixel.x, firstPixel.y)
+            if (hasFirstPoint) {
+              ctx.lineTo(firstX, firstY)
             }
             ctx.stroke()
           } else if (shape.type === 'rectangle' && shape.points.length === 2) {
@@ -333,15 +349,6 @@ function DrawingCanvas({
 
     const point = new google.maps.Point(x, y)
     return projection.fromContainerPixelToLatLng(point)
-  }
-
-  // Helper function to calculate bearing between two points
-  const calculateBearing = (from: Point, to: Point): number => {
-    const dLng = to.lng - from.lng
-    const y = Math.sin(dLng * Math.PI / 180) * Math.cos(to.lat * Math.PI / 180)
-    const x = Math.cos(from.lat * Math.PI / 180) * Math.sin(to.lat * Math.PI / 180) -
-              Math.sin(from.lat * Math.PI / 180) * Math.cos(to.lat * Math.PI / 180) * Math.cos(dLng * Math.PI / 180)
-    return Math.atan2(y, x)
   }
 
   // Helper function to calculate destination point given distance and bearing
