@@ -256,8 +256,9 @@ describe('mapUtils', () => {
         altitude: null,
         altitudeAccuracy: null,
         heading: null,
-        speed: null
-      },
+        speed: null,
+        toJSON: () => ({ latitude: 35.6598, longitude: 139.7006 })
+      } as GeolocationCoordinates,
       timestamp: Date.now()
     }
 

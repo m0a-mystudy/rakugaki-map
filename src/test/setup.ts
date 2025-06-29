@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 global.google = {
   maps: {
     LatLng: class MockLatLng {
-      constructor(public lat: number, public lng: number) {}
-      lat() { return this.lat }
-      lng() { return this.lng }
+      constructor(private _lat: number, private _lng: number) {}
+      lat() { return this._lat }
+      lng() { return this._lng }
     },
     Point: class MockPoint {
       constructor(public x: number, public y: number) {}

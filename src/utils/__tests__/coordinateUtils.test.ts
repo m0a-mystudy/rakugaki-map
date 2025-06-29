@@ -16,7 +16,7 @@ describe('coordinateUtils', () => {
     // Create a simple mock projection for testing
     mockProjection = {
       fromLatLngToContainerPixel: (latLng: any) =>
-        new global.google.maps.Point(latLng.lng * 100, latLng.lat * 100),
+        new global.google.maps.Point(latLng.lng() * 100, latLng.lat() * 100),
       fromContainerPixelToLatLng: (point: any) =>
         new global.google.maps.LatLng(point.y / 100, point.x / 100)
     } as any
@@ -27,8 +27,8 @@ describe('coordinateUtils', () => {
       const result = pixelToLatLng(13950, 3550, mockProjection)
 
       expect(result).toBeInstanceOf(global.google.maps.LatLng)
-      expect(result?.lat).toBe(35.5)
-      expect(result?.lng).toBe(139.5)
+      expect(result?.lat()).toBe(35.5)
+      expect(result?.lng()).toBe(139.5)
     })
 
     it('returns null when projection is null', () => {

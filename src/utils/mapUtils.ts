@@ -86,8 +86,7 @@ export const resetTilt = (map: google.maps.Map): void => {
  */
 export const createMapOptions = (
   center: google.maps.LatLngLiteral,
-  zoom: number,
-  allowedDomains: string[] = []
+  zoom: number
 ): google.maps.MapOptions => {
   // Determine map ID based on environment
   const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'rakugaki-map-grayscale'
