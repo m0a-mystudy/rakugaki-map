@@ -20,6 +20,14 @@ const defaultCenter = {
 const libraries: Libraries = ['places']
 
 
+// Log environment variables for debugging
+console.log('🗺️ Map configuration:')
+console.log('  VITE_MAP_ID:', import.meta.env.VITE_MAP_ID)
+console.log('  All env vars:', import.meta.env)
+
+const mapId = import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95'
+console.log('  Using mapId:', mapId)
+
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -29,7 +37,7 @@ const options: google.maps.MapOptions = {
   rotateControl: true, // Enable rotate control
   fullscreenControl: false,
   // Use custom grayscale map ID from environment variable
-  mapId: import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95', // Fallback to demo ID
+  mapId: mapId,
   renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
   // Enable rotation and tilt
   tilt: 45,
