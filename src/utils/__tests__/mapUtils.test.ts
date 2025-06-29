@@ -259,7 +259,19 @@ describe('mapUtils', () => {
         speed: null,
         toJSON: () => ({ latitude: 35.6598, longitude: 139.7006 })
       } as GeolocationCoordinates,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      toJSON: () => ({
+        coords: {
+          latitude: 35.6598,
+          longitude: 139.7006,
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      })
     }
 
     it('centers map on given position', () => {
