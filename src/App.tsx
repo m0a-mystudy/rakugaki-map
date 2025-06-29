@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { GoogleMap, LoadScript } from '@react-google-maps/api'
+import { GoogleMap, LoadScript, Libraries } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
 import { generateDrawingId, saveDrawing, loadDrawing } from './services/drawingService'
 import { initializeAuth, onAuthChange } from './firebase'
@@ -16,6 +16,9 @@ const defaultCenter = {
   lng: 139.6503
 }
 
+// Static libraries array to prevent reloading warning
+const libraries: Libraries = ['places']
+
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -24,12 +27,16 @@ const options: google.maps.MapOptions = {
   streetViewControl: false,
   rotateControl: true, // Enable rotate control
   fullscreenControl: false,
-  // Force vector rendering
-  mapId: 'DEMO_MAP_ID', // Use demo map ID for vector features
+  // Force vector rendering with proper Map ID
+  mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
+  renderingType: google.maps.RenderingType.VECTOR, // Force vector rendering
   mapTypeId: 'roadmap',
   // Enable rotation and tilt
   tilt: 45,
   heading: 0,
+  // Enable heading interaction
+  headingInteractionEnabled: true,
+  tiltInteractionEnabled: true,
 }
 
 function App() {
@@ -280,11 +287,15 @@ function App() {
       return
     }
 
-    // Check map methods
+    // Check map methods and rendering type
     console.log('Map object:', map)
     console.log('setHeading exists?', typeof map.setHeading)
     console.log('setTilt exists?', typeof map.setTilt)
     console.log('getHeading exists?', typeof map.getHeading)
+    console.log('Map rendering type:', map.getRenderingType ? map.getRenderingType() : 'unknown')
+    // Check Map ID if available
+    const mapWithId = map as google.maps.Map & { getMapId?: () => string }
+    console.log('Map ID:', mapWithId.getMapId ? mapWithId.getMapId() : 'no mapId method')
 
     const currentHeading = typeof map.getHeading === 'function' ? map.getHeading() : 0
     console.log('Current heading:', currentHeading)
@@ -350,8 +361,8 @@ function App() {
     <div className="app">
       <LoadScript
         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
-        version="weekly"
-        libraries={['places']}
+        version="beta"
+        libraries={libraries}
       >
         <div className="map-container">
           <GoogleMap
