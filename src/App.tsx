@@ -19,15 +19,6 @@ const defaultCenter = {
 // Static libraries array to prevent reloading warning
 const libraries: Libraries = ['places']
 
-// Grayscale map style for black and white mode
-const grayscaleMapStyle: google.maps.MapTypeStyle[] = [
-  {
-    stylers: [
-      { saturation: -100 }, // Remove all color saturation
-      { lightness: 10 }     // Slightly brighten for better visibility
-    ]
-  }
-]
 
 const options: google.maps.MapOptions = {
   disableDefaultUI: true,
