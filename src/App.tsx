@@ -29,7 +29,7 @@ const options: google.maps.MapOptions = {
   fullscreenControl: false,
   // Force vector rendering with proper Map ID
   mapId: '8e0a97af9e0a7f95', // Google's official vector map demo ID
-  renderingType: google.maps.RenderingType.VECTOR, // Force vector rendering
+  renderingType: 'VECTOR' as google.maps.RenderingType, // Force vector rendering
   mapTypeId: 'roadmap',
   // Enable rotation and tilt
   tilt: 45,
