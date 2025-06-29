@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import type { DrawingTool, Shape, Point } from '../types'
-import { MAP_CONSTANTS } from '../constants/map'
+import { useEffect } from 'react'
+import type { DrawingTool, Shape } from '../types'
+import { useDrawingCanvas } from '../hooks/useDrawingCanvas'
 import './DrawingCanvas.css'
 
 interface DrawingCanvasProps {
@@ -25,43 +25,43 @@ function DrawingCanvas({
   onShapesChange,
   onCurrentDrawingChange
 }: DrawingCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayRef = useRef<google.maps.OverlayView | null>(null)
-  const [isMouseDown, setIsMouseDown] = useState(false)
-  const [currentPixelLine, setCurrentPixelLine] = useState<{x: number, y: number, pressure?: number}[]>([])
-  const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
-  const [activePointerId, setActivePointerId] = useState<number | null>(null)
-  const [hoverPoint, setHoverPoint] = useState<{x: number, y: number} | null>(null)
-  const shapesRef = useRef<Shape[]>([])
+  const {
+    canvasRef,
+    overlayRef,
+    isMouseDown,
+    currentPixelLine,
+    startPoint,
+    hoverPoint,
+    shapesRef,
+    handlePointerStart,
+    handlePointerMove,
+    handlePointerEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleMouseLeave
+  } = useDrawingCanvas(
+    map,
+    isDrawing,
+    selectedTool,
+    selectedColor,
+    lineWidth,
+    shapes,
+    onShapesChange,
+    onCurrentDrawingChange
+  )
 
-  useEffect(() => {
-    shapesRef.current = shapes
-  }, [shapes])
-
-  // 現在描画中の状態を親に報告
-  useEffect(() => {
-    const hasDrawing = currentPixelLine.length > 0
-    onCurrentDrawingChange?.(hasDrawing)
-  }, [currentPixelLine, onCurrentDrawingChange])
-
-  // shapesがクリアされたときに現在の描画線もクリア
-  useEffect(() => {
-    if (shapes.length === 0) {
-      setCurrentPixelLine([])
-      setStartPoint(null)
-      setIsMouseDown(false)
-      setActivePointerId(null)
-    }
-  }, [shapes.length])
-
-  // shapesが変更されたときに即座にcanvasを再描画
+  // Force redraw when shapes change
   useEffect(() => {
     if (overlayRef.current) {
-      // Google Maps overlayの再描画を強制実行
       google.maps.event.trigger(overlayRef.current, 'draw')
     }
-  }, [shapes])
+  }, [shapes, overlayRef])
 
+  // Set up Google Maps overlay
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !map) return
@@ -89,6 +89,7 @@ function DrawingCanvas({
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
+        // Draw existing shapes
         shapesRef.current.forEach(shape => {
           ctx.strokeStyle = shape.color
 
@@ -231,7 +232,7 @@ function DrawingCanvas({
           }
         })
 
-        // 現在描画中の図形
+        // Draw current shape being drawn
         if (startPoint && currentPixelLine.length > 0) {
           ctx.strokeStyle = selectedColor
           ctx.lineWidth = lineWidth
@@ -338,400 +339,33 @@ function DrawingCanvas({
         overlayRef.current.setMap(null)
       }
     }
-  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth, isMouseDown, hoverPoint, isDrawing])
-
-  const pixelToLatLng = (x: number, y: number): google.maps.LatLng | null => {
-    const overlay = overlayRef.current
-    if (!overlay) return null
-
-    const projection = overlay.getProjection()
-    if (!projection) return null
-
-    const point = new google.maps.Point(x, y)
-    return projection.fromContainerPixelToLatLng(point)
-  }
-
-  // Helper function to calculate destination point given distance and bearing
-  const calculateDestinationPoint = (from: Point, distance: number, bearing: number): Point => {
-    const R = 6371000 // Earth's radius in meters
-    const lat1 = from.lat * Math.PI / 180
-    const lng1 = from.lng * Math.PI / 180
-    const angularDistance = distance / R
-
-    const lat2 = Math.asin(
-      Math.sin(lat1) * Math.cos(angularDistance) +
-      Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
-    )
-
-    const lng2 = lng1 + Math.atan2(
-      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
-      Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
-    )
-
-    return {
-      lat: lat2 * 180 / Math.PI,
-      lng: lng2 * 180 / Math.PI
-    }
-  }
-
-  // Helper function to calculate distance between two points
-  const calculateDistance = (from: Point, to: Point): number => {
-    const R = 6371000 // Earth's radius in meters
-    const lat1 = from.lat * Math.PI / 180
-    const lat2 = to.lat * Math.PI / 180
-    const dLat = (to.lat - from.lat) * Math.PI / 180
-    const dLng = (to.lng - from.lng) * Math.PI / 180
-
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1) * Math.cos(lat2) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-    return R * c
-  }
-
-  const getEventCoordinates = (e: React.MouseEvent | React.PointerEvent | React.TouchEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return null
-
-    let clientX: number, clientY: number, pressure = 0.5, pointerId: number | null = null, type: 'mouse' | 'pen' | 'touch' = 'mouse'
-
-    if ('pointerId' in e) {
-      // PointerEvent - iPad Pencil support
-      clientX = e.clientX
-      clientY = e.clientY
-      // iPad Pencil provides pressure values, ensure we use them properly
-      if (e.pointerType === 'pen') {
-        pressure = e.pressure > 0 ? e.pressure : 0.5
-      } else {
-        pressure = e.pressure || 0.5
-      }
-      pointerId = e.pointerId
-      type = e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse'
-    } else if ('clientX' in e) {
-      // MouseEvent
-      clientX = e.clientX
-      clientY = e.clientY
-      pressure = 0.5
-      type = 'mouse'
-    } else if ('touches' in e && e.touches.length > 0) {
-      // TouchEvent
-      clientX = e.touches[0].clientX
-      clientY = e.touches[0].clientY
-      if ('force' in e.touches[0]) {
-        pressure = (e.touches[0] as any).force || 0.5
-      }
-      type = 'touch'
-    } else {
-      return null
-    }
-
-    return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-      pressure,
-      pointerId,
-      type
-    }
-  }
-
-  const handlePointerStart = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return
-
-    // Prioritize pen input over touch
-    if (activePointerId !== null && e.pointerType !== 'pen') {
-      return // Another pointer is already active
-    }
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    setActivePointerId(coords.pointerId)
-    setIsMouseDown(true)
-    setStartPoint({x: coords.x, y: coords.y})
-    setCurrentPixelLine([coords])
-
-    // Capture pointer to ensure we get all events
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || activePointerId !== null) return // Don't handle if pointer is active
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    setIsMouseDown(true)
-    setStartPoint({x: coords.x, y: coords.y})
-    setCurrentPixelLine([coords])
-  }
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || activePointerId !== null) return // Don't handle if pointer is active
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    setIsMouseDown(true)
-    setStartPoint({x: coords.x, y: coords.y})
-    setCurrentPixelLine([coords])
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    // Update hover point for eraser cursor
-    if (selectedTool === 'eraser' && !isMouseDown) {
-      setHoverPoint({x: coords.x, y: coords.y})
-    }
-
-    if (!isMouseDown || activePointerId !== e.pointerId) return
-
-    if (selectedTool === 'pen' || selectedTool === 'eraser') {
-      setCurrentPixelLine(prev => [...prev, coords])
-    } else {
-      setCurrentPixelLine([startPoint!, coords])
-    }
-  }
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !isMouseDown || activePointerId !== null) return
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    if (selectedTool === 'pen' || selectedTool === 'eraser') {
-      setCurrentPixelLine(prev => [...prev, coords])
-    } else {
-      setCurrentPixelLine([startPoint!, coords])
-    }
-  }
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return
-
-    e.preventDefault()
-    const coords = getEventCoordinates(e)
-    if (!coords) return
-
-    // Update hover point for eraser cursor
-    if (selectedTool === 'eraser' && !isMouseDown) {
-      setHoverPoint({x: coords.x, y: coords.y})
-    }
-
-    if (!isMouseDown || activePointerId !== null) return
-
-    if (selectedTool === 'pen' || selectedTool === 'eraser') {
-      setCurrentPixelLine(prev => [...prev, coords])
-    } else {
-      setCurrentPixelLine([startPoint!, coords])
-    }
-  }
-
-  const handleEnd = () => {
-    if (!isDrawing || !isMouseDown || !startPoint) return
-
-    setIsMouseDown(false)
-    setActivePointerId(null)
-
-    if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
-      // Eraser logic: handle partial erasing for pen strokes
-      const eraserRadius = lineWidth * 6
-      const overlay = overlayRef.current
-      if (!overlay) return
-      const projection = overlay.getProjection()
-      if (!projection) return
-
-      const updatedShapes: Shape[] = []
-
-      shapes.forEach(shape => {
-        if (shape.type === 'pen' && shape.points.length > 1) {
-          // For pen strokes, implement partial erasing
-          const segments: { lat: number; lng: number; pressure?: number }[][] = []
-          let currentSegment: { lat: number; lng: number; pressure?: number }[] = []
-
-          for (let i = 0; i < shape.points.length; i++) {
-            const point = shape.points[i]
-            const latLng = new google.maps.LatLng(point.lat, point.lng)
-            const pixel = projection.fromLatLngToContainerPixel(latLng)
-
-            if (pixel) {
-              let isErased = false
-
-              // Check if this point intersects with any eraser point
-              for (const eraserPoint of currentPixelLine) {
-                const distance = Math.sqrt(
-                  Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
-                )
-                if (distance <= eraserRadius) {
-                  isErased = true
-                  break
-                }
-              }
-
-              if (!isErased) {
-                currentSegment.push(point)
-              } else {
-                // Point is erased, save current segment if it has points
-                if (currentSegment.length > 1) {
-                  segments.push(currentSegment)
-                }
-                currentSegment = []
-              }
-            }
-          }
-
-          // Don't forget the last segment
-          if (currentSegment.length > 1) {
-            segments.push(currentSegment)
-          }
-
-          // Create new shapes from segments
-          segments.forEach(segment => {
-            updatedShapes.push({
-              type: 'pen',
-              points: segment,
-              color: shape.color,
-              width: shape.width,
-              baseZoom: shape.baseZoom
-            })
-          })
-        } else {
-          // For other shapes (rectangle, circle, line), check for intersection
-          let shouldKeep = true
-
-          for (const eraserPoint of currentPixelLine) {
-            for (const shapePoint of shape.points) {
-              const latLng = new google.maps.LatLng(shapePoint.lat, shapePoint.lng)
-              const pixel = projection.fromLatLngToContainerPixel(latLng)
-              if (pixel) {
-                const distance = Math.sqrt(
-                  Math.pow(pixel.x - eraserPoint.x, 2) + Math.pow(pixel.y - eraserPoint.y, 2)
-                )
-                if (distance <= eraserRadius) {
-                  shouldKeep = false
-                  break
-                }
-              }
-            }
-            if (!shouldKeep) break
-          }
-
-          if (shouldKeep) {
-            updatedShapes.push(shape)
-          }
-        }
-      })
-
-      onShapesChange(updatedShapes)
-    } else if (currentPixelLine.length > 1) {
-      const latLngPoints: { lat: number; lng: number; pressure?: number }[] = []
-
-      if (selectedTool === 'pen') {
-        currentPixelLine.forEach(pixel => {
-          const latLng = pixelToLatLng(pixel.x, pixel.y)
-          if (latLng) {
-            latLngPoints.push({
-              lat: latLng.lat(),
-              lng: latLng.lng(),
-              pressure: pixel.pressure
-            })
-          }
-        })
-      } else {
-        const startLatLng = pixelToLatLng(startPoint.x, startPoint.y)
-        const endPixel = currentPixelLine[currentPixelLine.length - 1]
-        const endLatLng = pixelToLatLng(endPixel.x, endPixel.y)
-
-        if (startLatLng && endLatLng) {
-          const start: Point = { lat: startLatLng.lat(), lng: startLatLng.lng() }
-          const end: Point = { lat: endLatLng.lat(), lng: endLatLng.lng() }
-
-          if (selectedTool === 'rectangle') {
-            // Create 4 corner points for rectangle
-            latLngPoints.push(
-              start,
-              { lat: start.lat, lng: end.lng },
-              end,
-              { lat: end.lat, lng: start.lng }
-            )
-          } else if (selectedTool === 'circle') {
-            // Create polygon points for circle
-            const radius = calculateDistance(start, end)
-            for (let i = 0; i < MAP_CONSTANTS.CIRCLE_SEGMENTS; i++) {
-              const angle = (i * 2 * Math.PI) / MAP_CONSTANTS.CIRCLE_SEGMENTS
-              const point = calculateDestinationPoint(start, radius, angle)
-              latLngPoints.push(point)
-            }
-          } else {
-            // Line tool - keep as is
-            latLngPoints.push(start, end)
-          }
-        }
-      }
-
-      if (latLngPoints.length > 1) {
-        const newShape: Shape = {
-          type: selectedTool,
-          points: latLngPoints,
-          color: selectedColor,
-          width: lineWidth,
-          baseZoom: map.getZoom()
-        }
-        onShapesChange([...shapes, newShape])
-      }
-    }
-
-    setCurrentPixelLine([])
-    setStartPoint(null)
-  }
-
-  const handlePointerEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (activePointerId !== e.pointerId) return
-    e.currentTarget.releasePointerCapture(e.pointerId)
-    handleEnd()
-  }
-
-  const handleTouchEnd = () => {
-    if (activePointerId !== null) return // Don't handle if pointer is active
-    handleEnd()
-  }
-
-  const handleMouseUp = () => {
-    if (activePointerId !== null) return // Don't handle if pointer is active
-    handleEnd()
-  }
+  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth, isMouseDown, hoverPoint, isDrawing, shapesRef, overlayRef])
 
   return (
     <canvas
       ref={canvasRef}
-      className={`drawing-canvas ${isDrawing ? 'drawing' : ''}`}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => {
-        handleMouseUp()
-        setHoverPoint(null)
-      }}
+      className={`drawing-canvas ${isDrawing ? 'drawing' : ''} ${selectedTool === 'eraser' ? 'eraser-cursor' : ''}`}
       onPointerDown={handlePointerStart}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
-      onPointerLeave={(e) => {
-        handlePointerEnd(e)
-        setHoverPoint(null)
-      }}
+      onPointerCancel={handlePointerEnd}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ touchAction: 'none' }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: isDrawing ? 'auto' : 'none',
+        touchAction: 'none',
+        cursor: isDrawing ? (selectedTool === 'eraser' ? 'none' : 'crosshair') : 'default'
+      }}
     />
   )
 }
