@@ -47,7 +47,9 @@ variable "allowed_domains" {
     "rakugakimap-dev.web.app",
     "rakugakimap-dev.firebaseapp.com",
     "rakugakimap-dev--*.web.app",
-    "https://rakugakimap-dev--*.web.app/*"
+    "rakugakimap-dev-*.web.app",
+    "https://rakugakimap-dev--*.web.app/*",
+    "https://rakugakimap-dev-*.web.app/*"
   ]
 }
 
