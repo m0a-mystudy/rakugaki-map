@@ -214,7 +214,7 @@ function DrawingCanvas({
             ctx.stroke()
           } else if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
             // Draw eraser preview circle
-            const eraserRadius = lineWidth * 2
+            const eraserRadius = lineWidth * 6
             const lastPoint = currentPixelLine[currentPixelLine.length - 1]
 
             // Draw circle outline
@@ -235,7 +235,7 @@ function DrawingCanvas({
 
         // Draw hover cursor for eraser when not drawing
         if (!isMouseDown && selectedTool === 'eraser' && hoverPoint && isDrawing) {
-          const eraserRadius = lineWidth * 2
+          const eraserRadius = lineWidth * 6
 
           // Draw circle outline
           ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
@@ -439,7 +439,7 @@ function DrawingCanvas({
 
     if (selectedTool === 'eraser' && currentPixelLine.length > 0) {
       // Eraser logic: handle partial erasing for pen strokes
-      const eraserRadius = lineWidth * 2
+      const eraserRadius = lineWidth * 6
       const overlay = overlayRef.current
       if (!overlay) return
       const projection = overlay.getProjection()
