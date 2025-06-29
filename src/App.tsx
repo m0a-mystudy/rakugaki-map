@@ -24,10 +24,11 @@ const options = {
   streetViewControl: false,
   rotateControl: false,
   fullscreenControl: false,
-  // Use roadmap instead of hybrid for cleaner look
+  // Use vector rendering for rotation support
+  renderingType: 'VECTOR' as google.maps.RenderingType,
   mapTypeId: 'roadmap',
-  // Minimal tilt required for rotation to work
-  tilt: 0.1,
+  // Enable rotation and tilt
+  tilt: 0,
   heading: 0,
 }
 
@@ -279,24 +280,19 @@ function App() {
     setMapHeading(newHeading)
 
     try {
-      map.setOptions({
-        heading: newHeading,
-        tilt: 0.1
-      })
-    } catch (error) {
-      // Fallback: try to recreate map with new heading
-      try {
-        const currentCenter = map.getCenter()
-        const currentZoom = map.getZoom()
+      // Use setHeading method for vector maps
+      if (typeof map.setHeading === 'function') {
+        map.setHeading(newHeading)
+        console.log('Used setHeading method')
+      } else {
+        // Fallback to setOptions
         map.setOptions({
-          center: currentCenter,
-          zoom: currentZoom,
-          heading: newHeading,
-          tilt: 0.1
+          heading: newHeading
         })
-      } catch (fallbackError) {
-        console.error('Failed to rotate map:', fallbackError)
+        console.log('Used setOptions method')
       }
+    } catch (error) {
+      console.error('Failed to rotate map:', error)
     }
   }
 
@@ -304,24 +300,19 @@ function App() {
     if (!map) return
     setMapHeading(0)
     try {
-      map.setOptions({
-        heading: 0,
-        tilt: 0.1
-      })
-    } catch (error) {
-      // Fallback
-      try {
-        const currentCenter = map.getCenter()
-        const currentZoom = map.getZoom()
+      // Use setHeading method for vector maps
+      if (typeof map.setHeading === 'function') {
+        map.setHeading(0)
+        console.log('Reset using setHeading method')
+      } else {
+        // Fallback to setOptions
         map.setOptions({
-          center: currentCenter,
-          zoom: currentZoom,
-          heading: 0,
-          tilt: 0.1
+          heading: 0
         })
-      } catch (fallbackError) {
-        console.error('Failed to reset map rotation:', fallbackError)
+        console.log('Reset using setOptions method')
       }
+    } catch (error) {
+      console.error('Failed to reset map rotation:', error)
     }
   }
 
