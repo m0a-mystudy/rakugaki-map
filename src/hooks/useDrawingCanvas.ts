@@ -56,7 +56,15 @@ export const useDrawingCanvas = (
   const shapesRef = useRef<Shape[]>([])
 
   useEffect(() => {
+    console.log('🔄 useDrawingCanvas: shapes updated from', shapesRef.current.length, 'to', shapes.length)
     shapesRef.current = shapes
+
+    // Force canvas redraw when shapes change
+    const canvas = canvasRef.current
+    if (canvas && overlayRef.current) {
+      console.log('🎨 Forcing canvas redraw due to shapes change')
+      google.maps.event.trigger(overlayRef.current, 'draw')
+    }
   }, [shapes])
 
   // Report current drawing state to parent

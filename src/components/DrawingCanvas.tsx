@@ -57,13 +57,8 @@ function DrawingCanvas({
     onCurrentDrawingChange
   )
 
-  // Force redraw when shapes change
-  useEffect(() => {
-    console.log('🎨 DrawingCanvas: shapes changed, count:', shapes.length, 'triggering redraw')
-    if (overlayRef.current) {
-      google.maps.event.trigger(overlayRef.current, 'draw')
-    }
-  }, [shapes, overlayRef])
+  // Note: Canvas redraw is now handled in useDrawingCanvas hook
+  // This avoids duplicate redraw triggers
 
   // Set up Google Maps overlay
   useEffect(() => {
