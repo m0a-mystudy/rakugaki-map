@@ -84,7 +84,6 @@ function App() {
     lineWidth,
     isDrawing,
     isSaving,
-    hasCurrentDrawing,
     setShapes,
     setSelectedColor,
     setSelectedTool,
