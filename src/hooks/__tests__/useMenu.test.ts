@@ -10,9 +10,10 @@ describe('useMenu', () => {
   })
 
   afterEach(() => {
-    // @ts-ignore
-    delete window.location
-    window.location = originalLocation
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true
+    })
   })
 
   it('initializes with default values', () => {
@@ -24,12 +25,13 @@ describe('useMenu', () => {
 
   it('automatically minimizes menu when shared link is accessed', () => {
     // Mock window.location with id parameter
-    // @ts-ignore
-    delete window.location
-    window.location = {
-      ...originalLocation,
-      search: '?id=test-drawing-id'
-    } as Location
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...originalLocation,
+        search: '?id=test-drawing-id'
+      },
+      writable: true
+    })
 
     const { result } = renderHook(() => useMenu())
 
@@ -39,12 +41,13 @@ describe('useMenu', () => {
 
   it('does not minimize menu when no id parameter is present', () => {
     // Mock window.location without id parameter
-    // @ts-ignore
-    delete window.location
-    window.location = {
-      ...originalLocation,
-      search: ''
-    } as Location
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...originalLocation,
+        search: ''
+      },
+      writable: true
+    })
 
     const { result } = renderHook(() => useMenu())
 
