@@ -75,38 +75,32 @@ export function useDrawingHistory() {
   }, [])
 
   const createAddShapeCommand = useCallback(
-    (shape: Shape, getShapes: () => Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => ({
-      type: 'ADD_SHAPE',
-      execute: () => {
-        const currentShapes = getShapes()
-        const newShapes = [...currentShapes, shape]
-        console.log('▶️ ADD_SHAPE execute: from', currentShapes.length, 'to', newShapes.length, 'shapes')
-        setShapes(newShapes)
-      },
-      undo: () => {
-        const currentShapes = getShapes()
-        console.log('◀️ ADD_SHAPE undo: current shapes:', currentShapes.length, 'shape ID:', shape.id)
-        console.log('◀️ Current shape IDs:', currentShapes.map(s => s.id))
-        // Remove the shape with the matching ID
-        if (shape.id) {
-          const foundShape = currentShapes.find(s => s.id === shape.id)
-          console.log('◀️ Target shape found:', !!foundShape)
-          const newShapes = currentShapes.filter(s => s.id !== shape.id)
-          console.log('◀️ ADD_SHAPE undo by ID: from', currentShapes.length, 'to', newShapes.length, 'shapes')
-          console.log('◀️ New shape IDs:', newShapes.map(s => s.id))
+    (shape: Shape, getShapes: () => Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => {
+      const shapeSnapshot = { ...shape }  // Create a deep copy of the shape
+      return {
+        type: 'ADD_SHAPE',
+        execute: () => {
+          const currentShapes = getShapes()
+          const newShapes = [...currentShapes, shapeSnapshot]
+          console.log('▶️ ADD_SHAPE execute: from', currentShapes.length, 'to', newShapes.length, 'shapes')
           setShapes(newShapes)
-        } else {
-          // Fallback: remove the last occurrence of this specific shape
-          const shapeIndex = currentShapes.lastIndexOf(shape)
-          if (shapeIndex !== -1) {
-            const newShapes = currentShapes.filter((_, index) => index !== shapeIndex)
-            console.log('◀️ ADD_SHAPE undo by index:', shapeIndex, 'from', currentShapes.length, 'to', newShapes.length, 'shapes')
+        },
+        undo: () => {
+          const currentShapes = getShapes()
+          console.log('◀️ ADD_SHAPE undo: current shapes:', currentShapes.length, 'target shape ID:', shapeSnapshot.id)
+          console.log('◀️ Current shape IDs:', currentShapes.map(s => s.id))
+
+          // Simple approach: remove the last shape (most recently added)
+          if (currentShapes.length > 0) {
+            const newShapes = currentShapes.slice(0, -1)
+            console.log('◀️ ADD_SHAPE undo: removing last shape, from', currentShapes.length, 'to', newShapes.length)
+            console.log('◀️ New shape IDs:', newShapes.map(s => s.id))
             setShapes(newShapes)
           }
-        }
-      },
-      data: { shape }
-    }),
+        },
+        data: { shape: shapeSnapshot }
+      }
+    },
     []
   )
 
