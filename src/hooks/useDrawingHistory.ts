@@ -13,8 +13,6 @@ export function useDrawingHistory() {
   const addCommand = useCallback((command: DrawingCommand) => {
     const history = historyRef.current
 
-    console.log('📝 Adding command:', command.type, 'undo stack size:', history.undoStack.length)
-
     // Clear redo stack when new command is added
     history.redoStack = []
 
@@ -26,19 +24,16 @@ export function useDrawingHistory() {
       history.undoStack.shift()
     }
 
-    console.log('📝 Command added, new undo stack size:', history.undoStack.length)
   }, [])
 
   const undo = useCallback((): boolean => {
     const history = historyRef.current
 
     if (history.undoStack.length === 0) {
-      console.log('❌ Undo: No commands in undo stack')
       return false
     }
 
     const command = history.undoStack.pop()!
-    console.log('🔄 Executing undo command:', command.type, 'remaining undo commands:', history.undoStack.length)
     command.undo()
     history.redoStack.push(command)
 
@@ -49,12 +44,10 @@ export function useDrawingHistory() {
     const history = historyRef.current
 
     if (history.redoStack.length === 0) {
-      console.log('❌ Redo: No commands in redo stack')
       return false
     }
 
     const command = history.redoStack.pop()!
-    console.log('🔁 Executing redo command:', command.type, 'remaining redo commands:', history.redoStack.length)
     command.execute()
     history.undoStack.push(command)
 
@@ -82,19 +75,14 @@ export function useDrawingHistory() {
         execute: () => {
           const currentShapes = getShapes()
           const newShapes = [...currentShapes, shapeSnapshot]
-          console.log('▶️ ADD_SHAPE execute: from', currentShapes.length, 'to', newShapes.length, 'shapes')
           setShapes(newShapes)
         },
         undo: () => {
           const currentShapes = getShapes()
-          console.log('◀️ ADD_SHAPE undo: current shapes:', currentShapes.length, 'target shape ID:', shapeSnapshot.id)
-          console.log('◀️ Current shape IDs:', currentShapes.map(s => s.id))
 
           // Simple approach: remove the last shape (most recently added)
           if (currentShapes.length > 0) {
             const newShapes = currentShapes.slice(0, -1)
-            console.log('◀️ ADD_SHAPE undo: removing last shape, from', currentShapes.length, 'to', newShapes.length)
-            console.log('◀️ New shape IDs:', newShapes.map(s => s.id))
             setShapes(newShapes)
           }
         },

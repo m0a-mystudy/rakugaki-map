@@ -114,7 +114,6 @@ export const useDrawing = (
   const getShapes = useCallback(() => shapesRef.current, [])
 
   const addShape = useCallback((shape: Shape) => {
-    console.log('➕ addShape called with shape ID:', shape.id, 'type:', shape.type, 'current shapes:', shapes.length)
     const command = history.createAddShapeCommand(shape, getShapes, setShapes)
     command.execute()
     history.addCommand(command)
@@ -129,10 +128,7 @@ export const useDrawing = (
   }, [getShapes, history, shapes.length])
 
   const handleAutoSave = useCallback(async () => {
-    console.log('🔥 Auto-saving drawing', { drawingId, shapesCount: shapes.length, user: user?.uid })
-
     if (!user) {
-      console.log('⚠️ User not authenticated, skipping auto-save')
       return
     }
 
@@ -142,7 +138,6 @@ export const useDrawing = (
     }
 
     if (shapes.length === 0) {
-      console.warn('⚠️ No shapes to save')
       return
     }
 
@@ -150,7 +145,6 @@ export const useDrawing = (
     try {
       const currentMapState = getCurrentMapState()
       await saveDrawing(drawingId, shapes, currentMapState.center, currentMapState.zoom)
-      console.log('✅ Drawing auto-saved successfully')
     } catch (error) {
       console.error('Failed to auto-save drawing:', error)
     } finally {
@@ -159,30 +153,26 @@ export const useDrawing = (
   }, [user, drawingId, shapes, getCurrentMapState])
 
   const undo = useCallback(() => {
-    console.log('🔄 Undo called, canUndo:', history.canUndo(), 'current shapes:', shapes.length)
     if (history.canUndo()) {
       isHistoryOperation.current = true
       const success = history.undo()
-      console.log('🔄 Undo executed, success:', success, 'new shapes count:', shapes.length)
       if (success) {
         handleAutoSave()
       }
       isHistoryOperation.current = false
     }
-  }, [history, handleAutoSave, shapes.length])
+  }, [history, handleAutoSave])
 
   const redo = useCallback(() => {
-    console.log('🔁 Redo called, canRedo:', history.canRedo(), 'current shapes:', shapes.length)
     if (history.canRedo()) {
       isHistoryOperation.current = true
       const success = history.redo()
-      console.log('🔁 Redo executed, success:', success, 'new shapes count:', shapes.length)
       if (success) {
         handleAutoSave()
       }
       isHistoryOperation.current = false
     }
-  }, [history, handleAutoSave, shapes.length])
+  }, [history, handleAutoSave])
 
   // Auto-save with delay when shapes change (only when not actively drawing)
   useEffect(() => {
@@ -201,13 +191,11 @@ export const useDrawing = (
 
       // Skip auto-save if user is actively drawing or during history operations
       if (isDrawing || isHistoryOperation.current) {
-        console.log('🎨 User is actively drawing or performing history operation, skipping auto-save')
         return
       }
 
       // Set new timeout for delayed auto-save
       autoSaveTimeoutRef.current = setTimeout(() => {
-        console.log('⏰ Auto-save delay completed, executing save...')
         handleAutoSave()
       }, AUTO_SAVE_DELAY)
     }
@@ -223,7 +211,6 @@ export const useDrawing = (
 
       // Trigger delayed auto-save when drawing ends
       autoSaveTimeoutRef.current = setTimeout(() => {
-        console.log('🏁 Drawing ended, executing delayed auto-save...')
         handleAutoSave()
       }, AUTO_SAVE_DELAY)
     }
