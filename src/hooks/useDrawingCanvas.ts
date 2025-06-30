@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import type { DrawingTool, Shape, Point } from '../types'
 import { MAP_CONSTANTS } from '../constants/map'
 import { pixelToLatLng, latLngToPixel, calculateDistance, generateCirclePoints, generateRectanglePoints } from '../utils/coordinateUtils'
+import { generateShapeId } from '../services/drawingService'
 
 interface DrawingEventCoords {
   x: number
@@ -42,6 +43,7 @@ export const useDrawingCanvas = (
   lineWidth: number,
   shapes: Shape[],
   onShapesChange: (shapes: Shape[]) => void,
+  onAddShape?: (shape: Shape) => void,
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 ): UseDrawingCanvasReturn => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -54,8 +56,32 @@ export const useDrawingCanvas = (
   const shapesRef = useRef<Shape[]>([])
 
   useEffect(() => {
+    console.log('🔄 useDrawingCanvas: shapes updated from', shapesRef.current.length, 'to', shapes.length)
+    const previousLength = shapesRef.current.length
     shapesRef.current = shapes
-  }, [shapes])
+
+    // Force canvas redraw when shapes change
+    const canvas = canvasRef.current
+    if (canvas && overlayRef.current && previousLength !== shapes.length) {
+      console.log('🎨 Forcing canvas redraw due to shapes change')
+
+      // Method 1: Direct overlay draw
+      google.maps.event.trigger(overlayRef.current, 'draw')
+
+      // Method 2: Force map re-render by slightly changing zoom
+      if (map) {
+        const currentZoom = map.getZoom()
+        if (currentZoom !== undefined) {
+          console.log('🔍 Forcing map re-render with zoom trick')
+          // Temporarily change zoom by tiny amount
+          map.setZoom(currentZoom + 0.01)
+          setTimeout(() => {
+            map.setZoom(currentZoom)
+          }, 1)
+        }
+      }
+    }
+  }, [shapes, map])
 
   // Report current drawing state to parent
   useEffect(() => {
@@ -199,20 +225,26 @@ export const useDrawingCanvas = (
 
     if (latLngPoints.length > 0 && selectedTool !== 'eraser') {
       const newShape: Shape = {
+        id: generateShapeId(),
         type: selectedTool,
         points: latLngPoints,
         color: selectedColor,
         width: lineWidth,
         baseZoom: currentZoom
       }
-      onShapesChange([...shapesRef.current, newShape])
+
+      if (onAddShape) {
+        onAddShape(newShape)
+      } else {
+        onShapesChange([...shapesRef.current, newShape])
+      }
     }
 
     setCurrentPixelLine([])
     setStartPoint(null)
     setIsMouseDown(false)
     setActivePointerId(null)
-  }, [map, selectedTool, selectedColor, lineWidth, currentPixelLine, startPoint, onShapesChange])
+  }, [map, selectedTool, selectedColor, lineWidth, currentPixelLine, startPoint, onShapesChange, onAddShape])
 
   // Event handlers
   const handlePointerStart = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {

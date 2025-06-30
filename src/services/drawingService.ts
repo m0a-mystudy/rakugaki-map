@@ -16,6 +16,11 @@ export const generateDrawingId = (): string => {
          Math.random().toString(36).substring(2, 15)
 }
 
+export const generateShapeId = (): string => {
+  return Math.random().toString(36).substring(2, 15) +
+         Math.random().toString(36).substring(2, 15)
+}
+
 export const saveDrawing = async (
   drawingId: string,
   shapes: Shape[],

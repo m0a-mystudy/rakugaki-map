@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { generateDrawingId, saveDrawing, loadDrawing } from '../services/drawingService'
 import type { DrawingTool, Shape } from '../types'
+import { useDrawingHistory } from './useDrawingHistory'
 
 const DEFAULT_COLOR = '#ff4757'
 const DEFAULT_LINE_WIDTH = 3
@@ -32,6 +33,12 @@ export interface UseDrawingReturn {
   setHasCurrentDrawing: (has: boolean) => void
   handleShare: () => void
   loadDrawingData: (id: string) => Promise<void>
+  addShape: (shape: Shape) => void
+  clearAllShapes: () => void
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
 }
 
 /**
@@ -64,6 +71,9 @@ export const useDrawing = (
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
   const [lastShapeCount, setLastShapeCount] = useState(0)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isHistoryOperation = useRef(false)
+
+  const history = useDrawingHistory()
 
   // Initialize drawing ID from URL or generate new one
   useEffect(() => {
@@ -87,11 +97,36 @@ export const useDrawing = (
         setShapes(data.shapes)
         setCenter(data.center)
         setZoom(data.zoom)
+        history.clear()
       }
     } catch (error) {
       console.error('Failed to load drawing:', error)
     }
   }
+
+  const shapesRef = useRef<Shape[]>([])
+
+  // Keep shapesRef synchronized with shapes state
+  useEffect(() => {
+    shapesRef.current = shapes
+  }, [shapes])
+
+  const getShapes = useCallback(() => shapesRef.current, [])
+
+  const addShape = useCallback((shape: Shape) => {
+    console.log('➕ addShape called with shape ID:', shape.id, 'type:', shape.type, 'current shapes:', shapes.length)
+    const command = history.createAddShapeCommand(shape, getShapes, setShapes)
+    command.execute()
+    history.addCommand(command)
+  }, [getShapes, history, shapes.length])
+
+  const clearAllShapes = useCallback(() => {
+    if (shapes.length === 0) return
+
+    const command = history.createClearAllCommand(getShapes, setShapes)
+    command.execute()
+    history.addCommand(command)
+  }, [getShapes, history, shapes.length])
 
   const handleAutoSave = useCallback(async () => {
     console.log('🔥 Auto-saving drawing', { drawingId, shapesCount: shapes.length, user: user?.uid })
@@ -123,6 +158,32 @@ export const useDrawing = (
     }
   }, [user, drawingId, shapes, getCurrentMapState])
 
+  const undo = useCallback(() => {
+    console.log('🔄 Undo called, canUndo:', history.canUndo(), 'current shapes:', shapes.length)
+    if (history.canUndo()) {
+      isHistoryOperation.current = true
+      const success = history.undo()
+      console.log('🔄 Undo executed, success:', success, 'new shapes count:', shapes.length)
+      if (success) {
+        handleAutoSave()
+      }
+      isHistoryOperation.current = false
+    }
+  }, [history, handleAutoSave, shapes.length])
+
+  const redo = useCallback(() => {
+    console.log('🔁 Redo called, canRedo:', history.canRedo(), 'current shapes:', shapes.length)
+    if (history.canRedo()) {
+      isHistoryOperation.current = true
+      const success = history.redo()
+      console.log('🔁 Redo executed, success:', success, 'new shapes count:', shapes.length)
+      if (success) {
+        handleAutoSave()
+      }
+      isHistoryOperation.current = false
+    }
+  }, [history, handleAutoSave, shapes.length])
+
   // Auto-save with delay when shapes change (only when not actively drawing)
   useEffect(() => {
     if (shapes.length === 0 || shapes.length <= lastShapeCount) {
@@ -138,9 +199,9 @@ export const useDrawing = (
         clearTimeout(autoSaveTimeoutRef.current)
       }
 
-      // Skip auto-save if user is actively drawing
-      if (isDrawing) {
-        console.log('🎨 User is actively drawing, skipping auto-save')
+      // Skip auto-save if user is actively drawing or during history operations
+      if (isDrawing || isHistoryOperation.current) {
+        console.log('🎨 User is actively drawing or performing history operation, skipping auto-save')
         return
       }
 
@@ -199,6 +260,12 @@ export const useDrawing = (
     setIsDrawing,
     setHasCurrentDrawing,
     handleShare,
-    loadDrawingData
+    loadDrawingData,
+    addShape,
+    clearAllShapes,
+    undo,
+    redo,
+    canUndo: history.canUndo(),
+    canRedo: history.canRedo()
   }
 }

@@ -10,7 +10,7 @@ import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
-  ArrowUpIcon, ArrowRightIcon
+  ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon
 } from './components/Icons'
 import './App.css'
 
@@ -89,7 +89,12 @@ function App() {
     setSelectedTool,
     setLineWidth,
     setIsDrawing,
-    handleShare
+    handleShare,
+    addShape,
+    undo,
+    redo,
+    canUndo,
+    canRedo
   } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
 
   // UI menu state
@@ -127,6 +132,7 @@ function App() {
               lineWidth={lineWidth}
               shapes={shapes}
               onShapesChange={setShapes}
+              onAddShape={addShape}
             />
           )}
         </div>
@@ -278,6 +284,28 @@ function App() {
                   title="消しゴム"
                 >
                   <EraserIcon size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="history-section">
+              <h3>操作</h3>
+              <div className="history-buttons">
+                <button
+                  className={`tool-button ${canUndo ? '' : 'disabled'}`}
+                  onClick={undo}
+                  disabled={!canUndo}
+                  title="元に戻す"
+                >
+                  <UndoIcon size={20} />
+                </button>
+                <button
+                  className={`tool-button ${canRedo ? '' : 'disabled'}`}
+                  onClick={redo}
+                  disabled={!canRedo}
+                  title="やり直し"
+                >
+                  <RedoIcon size={20} />
                 </button>
               </div>
             </div>

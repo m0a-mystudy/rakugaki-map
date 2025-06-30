@@ -12,6 +12,7 @@ interface DrawingCanvasProps {
   lineWidth: number
   shapes: Shape[]
   onShapesChange: (shapes: Shape[]) => void
+  onAddShape?: (shape: Shape) => void
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 }
 
@@ -23,6 +24,7 @@ function DrawingCanvas({
   lineWidth,
   shapes,
   onShapesChange,
+  onAddShape,
   onCurrentDrawingChange
 }: DrawingCanvasProps) {
   const {
@@ -51,15 +53,27 @@ function DrawingCanvas({
     lineWidth,
     shapes,
     onShapesChange,
+    onAddShape,
     onCurrentDrawingChange
   )
 
-  // Force redraw when shapes change
+  // TIMESTAMP: Force refresh test
+  console.log('🚨 DrawingCanvas loaded at:', new Date().toISOString())
+  // Note: Canvas redraw is now handled in useDrawingCanvas hook
+  // This avoids duplicate redraw triggers
+
+  // Additional effect to ensure canvas redraws when shapes change
   useEffect(() => {
-    if (overlayRef.current) {
-      google.maps.event.trigger(overlayRef.current, 'draw')
+    if (overlayRef.current && shapes.length >= 0) {
+      console.log('🖌️ DrawingCanvas: Triggering redraw for shapes change')
+      // Force immediate redraw
+      requestAnimationFrame(() => {
+        if (overlayRef.current) {
+          google.maps.event.trigger(overlayRef.current, 'draw')
+        }
+      })
     }
-  }, [shapes, overlayRef])
+  }, [shapes])
 
   // Set up Google Maps overlay
   useEffect(() => {
