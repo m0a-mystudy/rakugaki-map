@@ -42,6 +42,7 @@ export const useDrawingCanvas = (
   lineWidth: number,
   shapes: Shape[],
   onShapesChange: (shapes: Shape[]) => void,
+  onAddShape?: (shape: Shape) => void,
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 ): UseDrawingCanvasReturn => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -205,14 +206,19 @@ export const useDrawingCanvas = (
         width: lineWidth,
         baseZoom: currentZoom
       }
-      onShapesChange([...shapesRef.current, newShape])
+
+      if (onAddShape) {
+        onAddShape(newShape)
+      } else {
+        onShapesChange([...shapesRef.current, newShape])
+      }
     }
 
     setCurrentPixelLine([])
     setStartPoint(null)
     setIsMouseDown(false)
     setActivePointerId(null)
-  }, [map, selectedTool, selectedColor, lineWidth, currentPixelLine, startPoint, onShapesChange])
+  }, [map, selectedTool, selectedColor, lineWidth, currentPixelLine, startPoint, onShapesChange, onAddShape])
 
   // Event handlers
   const handlePointerStart = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {

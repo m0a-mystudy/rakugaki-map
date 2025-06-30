@@ -26,3 +26,20 @@ export interface DrawingData {
   updatedAt: Date
   userId?: string
 }
+
+export interface DrawingCommand {
+  type: 'ADD_SHAPE' | 'REMOVE_SHAPE' | 'CLEAR_ALL'
+  execute: () => void
+  undo: () => void
+  data: {
+    shape?: Shape
+    shapes?: Shape[]
+    index?: number
+  }
+}
+
+export interface HistoryState {
+  undoStack: DrawingCommand[]
+  redoStack: DrawingCommand[]
+  maxHistorySize: number
+}

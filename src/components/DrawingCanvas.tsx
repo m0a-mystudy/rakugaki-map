@@ -12,6 +12,7 @@ interface DrawingCanvasProps {
   lineWidth: number
   shapes: Shape[]
   onShapesChange: (shapes: Shape[]) => void
+  onAddShape?: (shape: Shape) => void
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
 }
 
@@ -23,6 +24,7 @@ function DrawingCanvas({
   lineWidth,
   shapes,
   onShapesChange,
+  onAddShape,
   onCurrentDrawingChange
 }: DrawingCanvasProps) {
   const {
@@ -51,6 +53,7 @@ function DrawingCanvas({
     lineWidth,
     shapes,
     onShapesChange,
+    onAddShape,
     onCurrentDrawingChange
   )
 
