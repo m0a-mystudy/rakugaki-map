@@ -1,13 +1,11 @@
-import { useMemo } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
 import { useAuthManager } from './hooks/useAuthManager'
 import { useMap } from './hooks/useMap'
 import { useDrawing } from './hooks/useDrawing'
 import { useMenu } from './hooks/useMenu'
-import { createMapOptions } from './utils/mapUtils'
 import { DRAWING_COLORS } from './constants/drawing'
-import { MAP_CONTAINER_STYLE, DEFAULT_CENTER, LIBRARIES } from './constants/googleMaps'
+import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
 import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
@@ -68,9 +66,6 @@ function App() {
     toggleMenuMinimize
   } = useMenu()
 
-  // Create map options only once to avoid renderingType error
-  const mapOptions = useMemo(() => createMapOptions(DEFAULT_CENTER, 15), [])
-
   return (
     <div className="app">
       <LoadScript
@@ -85,7 +80,21 @@ function App() {
             zoom={zoom}
             onLoad={onLoad}
             onUnmount={onUnmount}
-            options={mapOptions}
+            options={{
+              disableDefaultUI: true,
+              zoomControl: true,
+              mapTypeControl: false,
+              scaleControl: false,
+              streetViewControl: false,
+              rotateControl: true,
+              fullscreenControl: false,
+              mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '8e0a97af9e0a7f95',
+              renderingType: 'VECTOR' as google.maps.RenderingType,
+              tilt: 0,
+              heading: 0,
+              headingInteractionEnabled: true,
+              tiltInteractionEnabled: true,
+            }}
           />
           {map && (
             <DrawingCanvas
