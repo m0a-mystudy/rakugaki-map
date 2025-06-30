@@ -104,13 +104,21 @@ export const useDrawing = (
     }
   }
 
-  const getShapes = useCallback(() => shapes, [shapes])
+  const shapesRef = useRef<Shape[]>([])
+
+  // Keep shapesRef synchronized with shapes state
+  useEffect(() => {
+    shapesRef.current = shapes
+  }, [shapes])
+
+  const getShapes = useCallback(() => shapesRef.current, [])
 
   const addShape = useCallback((shape: Shape) => {
+    console.log('➕ addShape called with shape ID:', shape.id, 'type:', shape.type, 'current shapes:', shapes.length)
     const command = history.createAddShapeCommand(shape, getShapes, setShapes)
     command.execute()
     history.addCommand(command)
-  }, [getShapes, history])
+  }, [getShapes, history, shapes.length])
 
   const clearAllShapes = useCallback(() => {
     if (shapes.length === 0) return
@@ -151,26 +159,30 @@ export const useDrawing = (
   }, [user, drawingId, shapes, getCurrentMapState])
 
   const undo = useCallback(() => {
+    console.log('🔄 Undo called, canUndo:', history.canUndo(), 'current shapes:', shapes.length)
     if (history.canUndo()) {
       isHistoryOperation.current = true
       const success = history.undo()
+      console.log('🔄 Undo executed, success:', success, 'new shapes count:', shapes.length)
       if (success) {
         handleAutoSave()
       }
       isHistoryOperation.current = false
     }
-  }, [history, handleAutoSave])
+  }, [history, handleAutoSave, shapes.length])
 
   const redo = useCallback(() => {
+    console.log('🔁 Redo called, canRedo:', history.canRedo(), 'current shapes:', shapes.length)
     if (history.canRedo()) {
       isHistoryOperation.current = true
       const success = history.redo()
+      console.log('🔁 Redo executed, success:', success, 'new shapes count:', shapes.length)
       if (success) {
         handleAutoSave()
       }
       isHistoryOperation.current = false
     }
-  }, [history, handleAutoSave])
+  }, [history, handleAutoSave, shapes.length])
 
   // Auto-save with delay when shapes change (only when not actively drawing)
   useEffect(() => {
