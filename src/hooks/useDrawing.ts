@@ -30,7 +30,6 @@ export interface UseDrawingReturn {
   setLineWidth: (width: number) => void
   setIsDrawing: (isDrawing: boolean) => void
   setHasCurrentDrawing: (has: boolean) => void
-  handleClear: () => void
   handleShare: () => void
   loadDrawingData: (id: string) => Promise<void>
 }
@@ -178,13 +177,6 @@ export const useDrawing = (
     }
   }, [])
 
-  const handleClear = useCallback(() => {
-    if (confirm('すべての描画を削除しますか？')) {
-      setShapes([])
-      setHasCurrentDrawing(false)
-    }
-  }, [])
-
   const handleShare = useCallback(() => {
     const url = window.location.href
     navigator.clipboard.writeText(url)
@@ -206,7 +198,6 @@ export const useDrawing = (
     setLineWidth,
     setIsDrawing,
     setHasCurrentDrawing,
-    handleClear,
     handleShare,
     loadDrawingData
   }
