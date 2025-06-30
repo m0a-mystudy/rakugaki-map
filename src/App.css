@@ -584,3 +584,36 @@ h3 {
   background: #3742fa;
   cursor: pointer;
 }
+
+/* PDF Export Button Styles */
+.action-button.export {
+  background-color: #27ae60;
+  color: white;
+  border-color: #27ae60;
+}
+
+.action-button.export:hover:not(:disabled) {
+  background-color: #229954;
+}
+
+.action-button.export:disabled {
+  background-color: #95a5a6;
+  border-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+/* Error Message Styles */
+.error-message {
+  padding: 8px 12px;
+  background-color: #ffe6e6;
+  border: 1px solid #ff9999;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #d63031;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-message:hover {
+  background-color: #ffcccc;
+}
