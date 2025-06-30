@@ -57,15 +57,12 @@ function DrawingCanvas({
     onCurrentDrawingChange
   )
 
-  // TIMESTAMP: Force refresh test
-  console.log('🚨 DrawingCanvas loaded at:', new Date().toISOString())
   // Note: Canvas redraw is now handled in useDrawingCanvas hook
   // This avoids duplicate redraw triggers
 
   // Additional effect to ensure canvas redraws when shapes change
   useEffect(() => {
     if (overlayRef.current && shapes.length >= 0) {
-      console.log('🖌️ DrawingCanvas: Triggering redraw for shapes change')
       // Force immediate redraw
       requestAnimationFrame(() => {
         if (overlayRef.current) {

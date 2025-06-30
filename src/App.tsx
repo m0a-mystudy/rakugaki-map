@@ -4,13 +4,14 @@ import { useAuthManager } from './hooks/useAuthManager'
 import { useMap } from './hooks/useMap'
 import { useDrawing } from './hooks/useDrawing'
 import { useMenu } from './hooks/useMenu'
+import { usePdfExport } from './hooks/usePdfExport'
 import { DRAWING_COLORS } from './constants/drawing'
 import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
 import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
-  ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon
+  ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon, DownloadIcon
 } from './components/Icons'
 import './App.css'
 
@@ -104,6 +105,24 @@ function App() {
     toggleMenuPosition,
     toggleMenuMinimize
   } = useMenu()
+
+  // PDF export functionality
+  const { exportToPdf, isExporting, exportError, clearError } = usePdfExport()
+
+  // Handle PDF export
+  const handlePdfExport = () => {
+    const mapContainer = document.querySelector('.map-container') as HTMLElement
+    if (mapContainer && map) {
+      exportToPdf(mapContainer, {
+        filename: 'rakugaki-map',
+        orientation: 'landscape',
+        format: 'a4',
+        map: map, // Pass the map instance directly
+        shapes: shapes // Pass the drawing shapes data
+      })
+    }
+  }
+
 
   return (
     <div className="app">
@@ -235,12 +254,26 @@ function App() {
                     <ShareIcon size={16} />
                     共有
                   </button>
+                  <button
+                    className="action-button export"
+                    onClick={handlePdfExport}
+                    disabled={isExporting}
+                    title="PDFとして保存"
+                  >
+                    <DownloadIcon size={16} />
+                    {isExporting ? 'エクスポート中...' : 'PDF'}
+                  </button>
                 </>
               )}
               {isSaving && (
                 <div className="saving-indicator">
                   <SaveIcon size={16} />
                   保存中...
+                </div>
+              )}
+              {exportError && (
+                <div className="error-message" onClick={clearError}>
+                  エクスポートエラー: {exportError}
                 </div>
               )}
             </div>
