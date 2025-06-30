@@ -10,7 +10,7 @@ import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
-  TrashIcon, ArrowUpIcon, ArrowRightIcon
+  ArrowUpIcon, ArrowRightIcon
 } from './components/Icons'
 import './App.css'
 
@@ -84,14 +84,12 @@ function App() {
     lineWidth,
     isDrawing,
     isSaving,
-    hasCurrentDrawing,
     setShapes,
     setSelectedColor,
     setSelectedTool,
     setLineWidth,
     setIsDrawing,
     setHasCurrentDrawing,
-    handleClear,
     handleShare
   } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
 
@@ -235,14 +233,6 @@ function App() {
                   </button>
                 </>
               )}
-              <button
-                className="action-button clear"
-                onClick={handleClear}
-                disabled={shapes.length === 0 && !hasCurrentDrawing}
-              >
-                <TrashIcon size={16} />
-                クリア
-              </button>
               {isSaving && (
                 <div className="saving-indicator">
                   <SaveIcon size={16} />
