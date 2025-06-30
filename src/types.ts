@@ -7,6 +7,7 @@ export interface Point {
 }
 
 export interface Shape {
+  id?: string
   type: DrawingTool
   points: Point[]
   color: string

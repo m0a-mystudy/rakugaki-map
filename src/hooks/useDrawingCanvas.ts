@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import type { DrawingTool, Shape, Point } from '../types'
 import { MAP_CONSTANTS } from '../constants/map'
 import { pixelToLatLng, latLngToPixel, calculateDistance, generateCirclePoints, generateRectanglePoints } from '../utils/coordinateUtils'
+import { generateShapeId } from '../services/drawingService'
 
 interface DrawingEventCoords {
   x: number
@@ -200,6 +201,7 @@ export const useDrawingCanvas = (
 
     if (latLngPoints.length > 0 && selectedTool !== 'eraser') {
       const newShape: Shape = {
+        id: generateShapeId(),
         type: selectedTool,
         points: latLngPoints,
         color: selectedColor,

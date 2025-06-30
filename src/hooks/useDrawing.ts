@@ -104,19 +104,21 @@ export const useDrawing = (
     }
   }
 
+  const getShapes = useCallback(() => shapes, [shapes])
+
   const addShape = useCallback((shape: Shape) => {
-    const command = history.createAddShapeCommand(shape, shapes, setShapes)
+    const command = history.createAddShapeCommand(shape, getShapes, setShapes)
     command.execute()
     history.addCommand(command)
-  }, [shapes, history])
+  }, [getShapes, history])
 
   const clearAllShapes = useCallback(() => {
     if (shapes.length === 0) return
 
-    const command = history.createClearAllCommand(shapes, setShapes)
+    const command = history.createClearAllCommand(getShapes, setShapes)
     command.execute()
     history.addCommand(command)
-  }, [shapes, history])
+  }, [getShapes, history, shapes.length])
 
   const handleAutoSave = useCallback(async () => {
     console.log('🔥 Auto-saving drawing', { drawingId, shapesCount: shapes.length, user: user?.uid })

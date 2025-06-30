@@ -67,15 +67,27 @@ export function useDrawingHistory() {
   }, [])
 
   const createAddShapeCommand = useCallback(
-    (shape: Shape, shapes: Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => ({
+    (shape: Shape, getShapes: () => Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => ({
       type: 'ADD_SHAPE',
       execute: () => {
-        const newShapes = [...shapes, shape]
+        const currentShapes = getShapes()
+        const newShapes = [...currentShapes, shape]
         setShapes(newShapes)
       },
       undo: () => {
-        const newShapes = shapes.filter((_, index) => index !== shapes.length - 1)
-        setShapes(newShapes)
+        const currentShapes = getShapes()
+        // Remove the shape with the matching ID
+        if (shape.id) {
+          const newShapes = currentShapes.filter(s => s.id !== shape.id)
+          setShapes(newShapes)
+        } else {
+          // Fallback: remove the last occurrence of this specific shape
+          const shapeIndex = currentShapes.lastIndexOf(shape)
+          if (shapeIndex !== -1) {
+            const newShapes = currentShapes.filter((_, index) => index !== shapeIndex)
+            setShapes(newShapes)
+          }
+        }
       },
       data: { shape }
     }),
@@ -83,16 +95,19 @@ export function useDrawingHistory() {
   )
 
   const createClearAllCommand = useCallback(
-    (shapes: Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => ({
-      type: 'CLEAR_ALL',
-      execute: () => {
-        setShapes([])
-      },
-      undo: () => {
-        setShapes(shapes)
-      },
-      data: { shapes }
-    }),
+    (getShapes: () => Shape[], setShapes: (shapes: Shape[]) => void): DrawingCommand => {
+      const shapesToRestore = getShapes() // Capture current shapes at command creation time
+      return {
+        type: 'CLEAR_ALL',
+        execute: () => {
+          setShapes([])
+        },
+        undo: () => {
+          setShapes(shapesToRestore)
+        },
+        data: { shapes: shapesToRestore }
+      }
+    },
     []
   )
 
