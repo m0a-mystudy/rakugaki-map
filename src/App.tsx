@@ -31,7 +31,7 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   streetViewControl: false,
   rotateControl: true,
   fullscreenControl: false,
-  mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '8e0a97af9e0a7f95',
+  mapId: import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95',
   renderingType: 'VECTOR' as google.maps.RenderingType,
   tilt: 0,
   heading: 0,
