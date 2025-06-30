@@ -219,7 +219,7 @@ export const usePdfExport = () => {
         shapes.forEach((shape, index) => {
           try {
             ctx.strokeStyle = shape.color || '#ff0000'
-            ctx.lineWidth = (shape.width || 2) * scale
+            ctx.lineWidth = shape.width || 2  // scaleを適用せずに元の太さを維持
             ctx.lineCap = 'round'
             ctx.lineJoin = 'round'
 
