@@ -57,15 +57,31 @@ export const useDrawingCanvas = (
 
   useEffect(() => {
     console.log('🔄 useDrawingCanvas: shapes updated from', shapesRef.current.length, 'to', shapes.length)
+    const previousLength = shapesRef.current.length
     shapesRef.current = shapes
 
     // Force canvas redraw when shapes change
     const canvas = canvasRef.current
-    if (canvas && overlayRef.current) {
+    if (canvas && overlayRef.current && previousLength !== shapes.length) {
       console.log('🎨 Forcing canvas redraw due to shapes change')
+
+      // Method 1: Direct overlay draw
       google.maps.event.trigger(overlayRef.current, 'draw')
+
+      // Method 2: Force map re-render by slightly changing zoom
+      if (map) {
+        const currentZoom = map.getZoom()
+        if (currentZoom !== undefined) {
+          console.log('🔍 Forcing map re-render with zoom trick')
+          // Temporarily change zoom by tiny amount
+          map.setZoom(currentZoom + 0.01)
+          setTimeout(() => {
+            map.setZoom(currentZoom)
+          }, 1)
+        }
+      }
     }
-  }, [shapes])
+  }, [shapes, map])
 
   // Report current drawing state to parent
   useEffect(() => {

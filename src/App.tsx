@@ -91,7 +91,6 @@ function App() {
     setIsDrawing,
     handleShare,
     addShape,
-    clearAllShapes,
     undo,
     redo,
     canUndo,
@@ -307,13 +306,6 @@ function App() {
                   title="やり直し"
                 >
                   <RedoIcon size={20} />
-                </button>
-                <button
-                  className="tool-button clear"
-                  onClick={clearAllShapes}
-                  title="すべてクリア"
-                >
-                  <EraserIcon size={20} />
                 </button>
               </div>
             </div>
