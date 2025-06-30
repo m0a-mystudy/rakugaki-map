@@ -22,6 +22,23 @@ console.log('  All env vars:', import.meta.env)
 const mapId = import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95'
 console.log('  Using mapId:', mapId)
 
+// Static map options - created once to avoid "renderingType after instantiation" error
+const MAP_OPTIONS: google.maps.MapOptions = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  mapTypeControl: false,
+  scaleControl: false,
+  streetViewControl: false,
+  rotateControl: true,
+  fullscreenControl: false,
+  mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '8e0a97af9e0a7f95',
+  renderingType: 'VECTOR' as google.maps.RenderingType,
+  tilt: 0,
+  heading: 0,
+  headingInteractionEnabled: true,
+  tiltInteractionEnabled: true,
+}
+
 function App() {
   const { user } = useAuthManager()
   const {
@@ -81,21 +98,7 @@ function App() {
             zoom={zoom}
             onLoad={onLoad}
             onUnmount={onUnmount}
-            options={{
-              disableDefaultUI: true,
-              zoomControl: true,
-              mapTypeControl: false,
-              scaleControl: false,
-              streetViewControl: false,
-              rotateControl: true,
-              fullscreenControl: false,
-              mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '8e0a97af9e0a7f95',
-              renderingType: 'VECTOR' as google.maps.RenderingType,
-              tilt: 0,
-              heading: 0,
-              headingInteractionEnabled: true,
-              tiltInteractionEnabled: true,
-            }}
+            options={MAP_OPTIONS}
           />
           {map && (
             <DrawingCanvas
