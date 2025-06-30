@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 interface PdfExportOptions {
   filename?: string
@@ -21,7 +20,6 @@ export const usePdfExport = () => {
   ) => {
     const {
       filename = 'rakugaki-map',
-      quality = 1.0,
       format = 'a4',
       orientation = 'landscape',
       map,
@@ -76,8 +74,8 @@ export const usePdfExport = () => {
         const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
         // Use current screen view for PDF export
-        const mapCenter = { lat: mapState.center.lat(), lng: mapState.center.lng() }
-        const zoom = Math.round(mapState.zoom)
+        const mapCenter = { lat: mapState.center!.lat(), lng: mapState.center!.lng() }
+        const zoom = Math.round(mapState.zoom!)
 
         console.log('🎯 Using current screen view for PDF export:', {
           center: mapCenter,
@@ -173,9 +171,9 @@ export const usePdfExport = () => {
 
         // Calculate the viewport bounds based on the static map image
         // The static map shows a specific geographic area that we need to match
-        const zoom = Math.round(mapState.zoom)
-        const centerLat = mapState.center.lat()
-        const centerLng = mapState.center.lng()
+        const zoom = Math.round(mapState.zoom!)
+        const centerLat = mapState.center!.lat()
+        const centerLng = mapState.center!.lng()
 
         console.log('🗺️ Center coordinates:', { centerLat, centerLng, zoom })
 
@@ -228,7 +226,7 @@ export const usePdfExport = () => {
             if (shape.type === 'pen' && shape.points && shape.points.length > 1) {
               ctx.beginPath()
 
-              shape.points.forEach((point, pointIndex) => {
+              shape.points.forEach((point: any, pointIndex: number) => {
                 // 同じbounds基準の座標変換を使用
                 const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
                 const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
@@ -250,7 +248,7 @@ export const usePdfExport = () => {
             if (shape.type === 'line' && shape.points && shape.points.length === 2) {
               ctx.beginPath()
 
-              shape.points.forEach((point, index) => {
+              shape.points.forEach((point: any, index: number) => {
                 const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
                 const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
 
@@ -270,7 +268,7 @@ export const usePdfExport = () => {
             if ((shape.type === 'rectangle' || shape.type === 'circle') && shape.points && shape.points.length > 2) {
               ctx.beginPath()
 
-              shape.points.forEach((point, index) => {
+              shape.points.forEach((point: any, index: number) => {
                 const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
                 const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
 
