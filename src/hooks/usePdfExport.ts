@@ -50,6 +50,11 @@ export const usePdfExport = () => {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
 
+      // Variables for static map dimensions
+      let staticWidth = 640
+      let staticHeight = 640
+      let mapScale = 2 // 2x for high DPI
+
       // Get current map state
       let mapState = null
       if (map) {
@@ -83,7 +88,6 @@ export const usePdfExport = () => {
 
         // Calculate map size based on container aspect ratio
         const aspectRatio = mapWidth / mapHeight
-        let staticWidth, staticHeight
 
         if (aspectRatio > 1) {
           // Landscape
@@ -96,7 +100,7 @@ export const usePdfExport = () => {
         }
 
         const size = `${staticWidth}x${staticHeight}`
-        const mapScale = 2 // 2x for high DPI
+
 
         // Create static map URL with grayscale styling
         const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?` +
@@ -140,39 +144,79 @@ export const usePdfExport = () => {
         ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height)
       }
 
-      // Re-render drawings on top of the map
-      if (shapes && shapes.length > 0 && mapState) {
+      // Re-enable Canvas drawing to match Static API paths
+      if (shapes && shapes.length > 0 && mapState && map) {
         console.log(`🎨 Re-rendering ${shapes.length} shapes...`)
 
+        // Create a temporary overlay to get the exact same projection as the screen
+        const overlay = new google.maps.OverlayView()
+        overlay.setMap(map)
+
+        // Wait for projection to be available
+        await new Promise<void>((resolve) => {
+          const checkProjection = () => {
+            if (overlay.getProjection()) {
+              resolve()
+            } else {
+              setTimeout(checkProjection, 10)
+            }
+          }
+          checkProjection()
+        })
+
+        const projection = overlay.getProjection()
+        if (!projection) {
+          console.warn('❌ Could not get projection')
+          overlay.setMap(null)
+          return
+        }
+
+        // Calculate the viewport bounds based on the static map image
+        // The static map shows a specific geographic area that we need to match
         const zoom = Math.round(mapState.zoom)
         const centerLat = mapState.center.lat()
         const centerLng = mapState.center.lng()
 
-        // Web Mercator projection functions
-        const lngToX = (lng: number, zoom: number) => {
-          return ((lng + 180) / 360) * Math.pow(2, zoom) * 256
+        console.log('🗺️ Center coordinates:', { centerLat, centerLng, zoom })
+
+        // Google Maps Static APIの正確なメートル/ピクセル計算
+        // 標準的なGoogle Maps計算式を使用
+        const metersPerPixelAtZoom = 156543.03392 * Math.cos(centerLat * Math.PI / 180) / Math.pow(2, zoom)
+
+        // Calculate the geographic bounds that the static map covers
+        // Static API calculates based on ACTUAL pixels requested (not accounting for scale parameter)
+        // The scale parameter only affects image quality, not geographic coverage
+        const mapWidthInMeters = staticWidth * metersPerPixelAtZoom
+        const mapHeightInMeters = staticHeight * metersPerPixelAtZoom
+
+        // Convert to degrees
+        const metersPerDegreeLat = 111320
+        const metersPerDegreeLng = 111320 * Math.cos(centerLat * Math.PI / 180)
+
+        const mapWidthInDegrees = mapWidthInMeters / metersPerDegreeLng
+        const mapHeightInDegrees = mapHeightInMeters / metersPerDegreeLat
+
+        // Calculate the bounds
+        const bounds = {
+          west: centerLng - mapWidthInDegrees / 2,
+          east: centerLng + mapWidthInDegrees / 2,
+          south: centerLat - mapHeightInDegrees / 2,
+          north: centerLat + mapHeightInDegrees / 2
         }
 
-        const latToY = (lat: number, zoom: number) => {
-          const latRad = lat * Math.PI / 180
-          return (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom) * 256
-        }
+        console.log('📐 Calculated bounds:', bounds)
+        console.log('📐 Map dimensions:', {
+          staticWidth,
+          staticHeight,
+          mapScale,
+          zoom,
+          centerLat,
+          centerLng,
+          compositeCanvasWidth: compositeCanvas.width,
+          compositeCanvasHeight: compositeCanvas.height,
+          pixelScale: compositeCanvas.width / (staticWidth * mapScale)
+        })
 
-        // Calculate center in pixel coordinates
-        const centerX = lngToX(centerLng, zoom)
-        const centerY = latToY(centerLat, zoom)
-
-        // Calculate pixel size of the visible area
-        // At zoom level z, the world is 256 * 2^z pixels wide
-        const worldPixelWidth = 256 * Math.pow(2, zoom)
-
-        // Calculate meters per pixel at this latitude and zoom
-        const metersPerPixel = 156543.03392 * Math.cos(centerLat * Math.PI / 180) / Math.pow(2, zoom)
-
-        // Approximate the pixel dimensions of our canvas at this zoom level
-        // This is an approximation based on typical Google Maps behavior
-        const mapPixelWidth = compositeCanvas.width / scale
-        const mapPixelHeight = compositeCanvas.height / scale
 
         shapes.forEach((shape, index) => {
           try {
@@ -185,17 +229,12 @@ export const usePdfExport = () => {
               ctx.beginPath()
 
               shape.points.forEach((point, pointIndex) => {
-                // Convert lat/lng to pixel coordinates
-                const pointX = lngToX(point.lng, zoom)
-                const pointY = latToY(point.lat, zoom)
+                // 同じbounds基準の座標変換を使用
+                const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
+                const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
 
-                // Calculate offset from center
-                const offsetX = pointX - centerX
-                const offsetY = pointY - centerY
-
-                // Convert to canvas coordinates
-                const canvasX = (compositeCanvas.width / 2) + offsetX * scale
-                const canvasY = (compositeCanvas.height / 2) + offsetY * scale
+                const canvasX = relativeX * compositeCanvas.width
+                const canvasY = relativeY * compositeCanvas.height
 
                 if (pointIndex === 0) {
                   ctx.moveTo(canvasX, canvasY)
@@ -211,24 +250,20 @@ export const usePdfExport = () => {
             if (shape.type === 'line' && shape.points && shape.points.length === 2) {
               ctx.beginPath()
 
-              // Convert start point
-              const startX = lngToX(shape.points[0].lng, zoom)
-              const startY = latToY(shape.points[0].lat, zoom)
-              const startOffsetX = startX - centerX
-              const startOffsetY = startY - centerY
-              const startCanvasX = (compositeCanvas.width / 2) + startOffsetX * scale
-              const startCanvasY = (compositeCanvas.height / 2) + startOffsetY * scale
+              shape.points.forEach((point, index) => {
+                const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
+                const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
 
-              // Convert end point
-              const endX = lngToX(shape.points[1].lng, zoom)
-              const endY = latToY(shape.points[1].lat, zoom)
-              const endOffsetX = endX - centerX
-              const endOffsetY = endY - centerY
-              const endCanvasX = (compositeCanvas.width / 2) + endOffsetX * scale
-              const endCanvasY = (compositeCanvas.height / 2) + endOffsetY * scale
+                const canvasX = relativeX * compositeCanvas.width
+                const canvasY = relativeY * compositeCanvas.height
 
-              ctx.moveTo(startCanvasX, startCanvasY)
-              ctx.lineTo(endCanvasX, endCanvasY)
+                if (index === 0) {
+                  ctx.moveTo(canvasX, canvasY)
+                } else {
+                  ctx.lineTo(canvasX, canvasY)
+                }
+              })
+
               ctx.stroke()
             }
 
@@ -236,12 +271,11 @@ export const usePdfExport = () => {
               ctx.beginPath()
 
               shape.points.forEach((point, index) => {
-                const pointX = lngToX(point.lng, zoom)
-                const pointY = latToY(point.lat, zoom)
-                const offsetX = pointX - centerX
-                const offsetY = pointY - centerY
-                const canvasX = (compositeCanvas.width / 2) + offsetX * scale
-                const canvasY = (compositeCanvas.height / 2) + offsetY * scale
+                const relativeX = (point.lng - bounds.west) / mapWidthInDegrees
+                const relativeY = (bounds.north - point.lat) / mapHeightInDegrees
+
+                const canvasX = relativeX * compositeCanvas.width
+                const canvasY = relativeY * compositeCanvas.height
 
                 if (index === 0) {
                   ctx.moveTo(canvasX, canvasY)
@@ -259,8 +293,11 @@ export const usePdfExport = () => {
           }
         })
 
+        // Clean up the temporary overlay
+        overlay.setMap(null)
         console.log('✅ All shapes re-rendered')
       }
+
 
       // Convert to data URL
       const dataUrl = compositeCanvas.toDataURL('image/jpeg', 0.95)
