@@ -1,9 +1,54 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useMenu } from '../useMenu'
 
 describe('useMenu', () => {
+  let originalLocation: Location
+
+  beforeEach(() => {
+    originalLocation = window.location
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true
+    })
+  })
+
   it('initializes with default values', () => {
+    const { result } = renderHook(() => useMenu())
+
+    expect(result.current.menuPosition).toBe('right')
+    expect(result.current.isMenuMinimized).toBe(false)
+  })
+
+  it('automatically minimizes menu when shared link is accessed', () => {
+    // Mock window.location with id parameter
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...originalLocation,
+        search: '?id=test-drawing-id'
+      },
+      writable: true
+    })
+
+    const { result } = renderHook(() => useMenu())
+
+    expect(result.current.menuPosition).toBe('right')
+    expect(result.current.isMenuMinimized).toBe(true)
+  })
+
+  it('does not minimize menu when no id parameter is present', () => {
+    // Mock window.location without id parameter
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...originalLocation,
+        search: ''
+      },
+      writable: true
+    })
+
     const { result } = renderHook(() => useMenu())
 
     expect(result.current.menuPosition).toBe('right')

@@ -89,7 +89,6 @@ function App() {
     setSelectedTool,
     setLineWidth,
     setIsDrawing,
-    setHasCurrentDrawing,
     handleShare
   } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
 
@@ -128,7 +127,6 @@ function App() {
               lineWidth={lineWidth}
               shapes={shapes}
               onShapesChange={setShapes}
-              onCurrentDrawingChange={setHasCurrentDrawing}
             />
           )}
         </div>
