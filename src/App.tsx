@@ -81,7 +81,6 @@ function App() {
             zoom={zoom}
             onLoad={onLoad}
             onUnmount={onUnmount}
-            onError={(error) => console.error('Google Maps Error:', error)}
             options={{
               disableDefaultUI: true,
               zoomControl: true,
