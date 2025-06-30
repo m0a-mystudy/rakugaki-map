@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { generateDrawingId, saveDrawing, loadDrawing } from '../services/drawingService'
 import type { DrawingTool, Shape } from '../types'
 
 const DEFAULT_COLOR = '#ff4757'
 const DEFAULT_LINE_WIDTH = 3
+const AUTO_SAVE_DELAY = 1000 // 1 second delay
 
 export interface UseDrawingReturn {
   drawingId: string
@@ -40,6 +41,7 @@ export const useDrawing = (
   const [isSaving, setIsSaving] = useState(false)
   const [hasCurrentDrawing, setHasCurrentDrawing] = useState(false)
   const [lastShapeCount, setLastShapeCount] = useState(0)
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Initialize drawing ID from URL or generate new one
   useEffect(() => {
@@ -99,7 +101,7 @@ export const useDrawing = (
     }
   }, [user, drawingId, shapes, getCurrentMapState])
 
-  // Auto-save when shapes change
+  // Auto-save with delay when shapes change (only when not actively drawing)
   useEffect(() => {
     if (shapes.length === 0 || shapes.length <= lastShapeCount) {
       setLastShapeCount(shapes.length)
@@ -108,9 +110,50 @@ export const useDrawing = (
 
     if (shapes.length > lastShapeCount) {
       setLastShapeCount(shapes.length)
-      handleAutoSave()
+
+      // Clear existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+
+      // Skip auto-save if user is actively drawing
+      if (isDrawing) {
+        console.log('🎨 User is actively drawing, skipping auto-save')
+        return
+      }
+
+      // Set new timeout for delayed auto-save
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        console.log('⏰ Auto-save delay completed, executing save...')
+        handleAutoSave()
+      }, AUTO_SAVE_DELAY)
     }
-  }, [shapes, lastShapeCount, handleAutoSave])
+  }, [shapes, lastShapeCount, handleAutoSave, isDrawing])
+
+  // Auto-save when drawing mode ends (if there are unsaved changes)
+  useEffect(() => {
+    if (!isDrawing && shapes.length > 0) {
+      // Clear any existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+
+      // Trigger delayed auto-save when drawing ends
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        console.log('🏁 Drawing ended, executing delayed auto-save...')
+        handleAutoSave()
+      }, AUTO_SAVE_DELAY)
+    }
+  }, [isDrawing, shapes.length, handleAutoSave])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleClear = useCallback(() => {
     if (confirm('すべての描画を削除しますか？')) {
