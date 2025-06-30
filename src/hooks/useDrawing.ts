@@ -101,7 +101,7 @@ export const useDrawing = (
     }
   }, [user, drawingId, shapes, getCurrentMapState])
 
-  // Auto-save with delay when shapes change
+  // Auto-save with delay when shapes change (only when not actively drawing)
   useEffect(() => {
     if (shapes.length === 0 || shapes.length <= lastShapeCount) {
       setLastShapeCount(shapes.length)
@@ -116,13 +116,35 @@ export const useDrawing = (
         clearTimeout(autoSaveTimeoutRef.current)
       }
 
+      // Skip auto-save if user is actively drawing
+      if (isDrawing) {
+        console.log('🎨 User is actively drawing, skipping auto-save')
+        return
+      }
+
       // Set new timeout for delayed auto-save
       autoSaveTimeoutRef.current = setTimeout(() => {
         console.log('⏰ Auto-save delay completed, executing save...')
         handleAutoSave()
       }, AUTO_SAVE_DELAY)
     }
-  }, [shapes, lastShapeCount, handleAutoSave])
+  }, [shapes, lastShapeCount, handleAutoSave, isDrawing])
+
+  // Auto-save when drawing mode ends (if there are unsaved changes)
+  useEffect(() => {
+    if (!isDrawing && shapes.length > 0) {
+      // Clear any existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+
+      // Trigger delayed auto-save when drawing ends
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        console.log('🏁 Drawing ended, executing delayed auto-save...')
+        handleAutoSave()
+      }, AUTO_SAVE_DELAY)
+    }
+  }, [isDrawing, shapes.length, handleAutoSave])
 
   // Cleanup timeout on unmount
   useEffect(() => {
