@@ -4,8 +4,17 @@ import type { DrawingTool, Shape } from '../types'
 
 const DEFAULT_COLOR = '#ff4757'
 const DEFAULT_LINE_WIDTH = 3
-const AUTO_SAVE_DELAY = 1000 // 1 second delay
+/**
+ * Auto-save delay in milliseconds.
+ * Waits 1 second after user stops drawing before triggering save.
+ * This prevents frequent saves during continuous drawing.
+ */
+const AUTO_SAVE_DELAY = 1000
 
+/**
+ * Return type for useDrawing hook.
+ * Manages drawing state, tools, and smart auto-save functionality.
+ */
 export interface UseDrawingReturn {
   drawingId: string
   shapes: Shape[]
@@ -26,6 +35,20 @@ export interface UseDrawingReturn {
   loadDrawingData: (id: string) => Promise<void>
 }
 
+/**
+ * Custom hook for managing drawing state and smart auto-save functionality.
+ *
+ * Features:
+ * - Delayed auto-save (1 second after drawing stops)
+ * - Skips saves during continuous drawing for better performance
+ * - Automatic drawing ID generation and URL management
+ * - Firebase integration with anonymous authentication
+ *
+ * @param user - Firebase user object for authentication
+ * @param getCurrentMapState - Function to get current map center and zoom
+ * @param setCenter - Function to update map center
+ * @param setZoom - Function to update map zoom
+ */
 export const useDrawing = (
   user: any,
   getCurrentMapState: () => { center: { lat: number, lng: number }, zoom: number },

@@ -22,7 +22,11 @@ console.log('  All env vars:', import.meta.env)
 const mapId = import.meta.env.VITE_MAP_ID || '8e0a97af9e0a7f95'
 console.log('  Using mapId:', mapId)
 
-// Static map options - created once to avoid "renderingType after instantiation" error
+/**
+ * Static Google Maps options configuration.
+ * Created once outside component to prevent "renderingType after instantiation" error.
+ * Uses VECTOR rendering for rotation/tilt support and custom grayscale styling.
+ */
 const MAP_OPTIONS: google.maps.MapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
@@ -39,8 +43,22 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   tiltInteractionEnabled: true,
 }
 
+/**
+ * Main App component for the Rakugaki Map drawing application.
+ *
+ * Orchestrates custom hooks for modular state management:
+ * - useAuthManager: Firebase authentication
+ * - useMap: Google Maps controls and state
+ * - useDrawing: Drawing tools and smart auto-save
+ * - useMenu: UI menu positioning
+ *
+ * Reduced from 597 to 296 lines (50% reduction) through hook extraction.
+ */
 function App() {
+  // Firebase authentication
   const { user } = useAuthManager()
+
+  // Google Maps state and controls
   const {
     map,
     center,
@@ -58,6 +76,7 @@ function App() {
     setZoom
   } = useMap()
 
+  // Drawing state and smart auto-save
   const {
     shapes,
     selectedColor,
@@ -76,6 +95,7 @@ function App() {
     handleShare
   } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
 
+  // UI menu state
   const {
     menuPosition,
     isMenuMinimized,
