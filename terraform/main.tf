@@ -69,6 +69,12 @@ resource "google_project_service" "places_api" {
   disable_on_destroy = false
 }
 
+# Google Maps Static API (required for PDF export)
+resource "google_project_service" "maps_static_api" {
+  service = "static-maps-backend.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Firebase Authentication API
 resource "google_project_service" "firebase_auth" {
   service = "firebase.googleapis.com"
@@ -107,6 +113,9 @@ resource "google_apikeys_key" "maps_api_key" {
     api_targets {
       service = "places-backend.googleapis.com"
     }
+    api_targets {
+      service = "static-maps-backend.googleapis.com"
+    }
 
     browser_key_restrictions {
       allowed_referrers = var.allowed_domains
@@ -117,7 +126,8 @@ resource "google_apikeys_key" "maps_api_key" {
     google_project_service.apikeys,
     google_project_service.maps_api,
     google_project_service.maps_js_api,
-    google_project_service.places_api
+    google_project_service.places_api,
+    google_project_service.maps_static_api
   ]
 }
 

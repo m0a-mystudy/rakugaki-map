@@ -41,9 +41,13 @@ variable "allowed_domains" {
   type        = list(string)
   default     = [
     "the-rakugaki-map.web.app",
+    "https://the-rakugaki-map.web.app",
     "the-rakugaki-map.firebaseapp.com",
-    "rakugaki-map.web.app",
-    "rakugaki-map.firebaseapp.com"
+    "https://the-rakugaki-map.firebaseapp.com",
+    "the-rakugaki-map--*.web.app",
+    "https://the-rakugaki-map--*.web.app",
+    "the-rakugaki-map-*.web.app",
+    "https://the-rakugaki-map-*.web.app"
   ]
 }
 
