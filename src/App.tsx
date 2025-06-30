@@ -72,6 +72,7 @@ function App() {
         googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
         version="beta"
         libraries={LIBRARIES}
+        loadingElement={<div>Loading Maps...</div>}
       >
         <div className="map-container">
           <GoogleMap
@@ -80,6 +81,7 @@ function App() {
             zoom={zoom}
             onLoad={onLoad}
             onUnmount={onUnmount}
+            onError={(error) => console.error('Google Maps Error:', error)}
             options={{
               disableDefaultUI: true,
               zoomControl: true,
