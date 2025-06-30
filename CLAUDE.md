@@ -28,15 +28,24 @@ This is a map-based drawing application where users can draw on Google Maps and 
    - Vector map rendering enabled with rotation and tilt capabilities
    - See `DrawingCanvas.tsx` for the coordinate transformation logic
 
-2. **State Management**: Local React state (no Redux/Context)
-   - Drawing data flows: DrawingCanvas → App → Firebase
+2. **State Management**: Modular React Hooks (no Redux/Context)
+   - Refactored to custom hooks for separation of concerns
+   - Drawing data flows: useDrawingCanvas → useDrawing → Firebase
    - URL parameter (`?id=xxx`) drives the shared drawing ID
    - Map state (center, zoom) is tracked for saving/loading views
+   - **Custom Hooks Architecture**:
+     - `useMap`: Map controls, geolocation, rotation/tilt management
+     - `useDrawing`: Drawing state, auto-save logic, Firebase operations
+     - `useDrawingCanvas`: Canvas events, shape creation, drawing interactions
+     - `useMenu`: UI menu positioning and minimization state
+     - `useAuthManager`: Firebase authentication management
 
-3. **Data Persistence**: Firebase Firestore
+3. **Data Persistence**: Firebase Firestore with Smart Auto-Save
    - Collection: `drawings`
    - Each drawing has a random ID used in the share URL
-   - No real-time sync yet - manual save button only
+   - **Delayed Auto-Save**: 1-second delay after drawing stops
+   - **Smart Saving**: Skips saves during continuous drawing activities
+   - Triggers save when drawing mode ends to ensure data integrity
 
 4. **Security Model**: Anonymous Authentication + Firestore Rules
    - Anonymous authentication enabled for edit permissions
@@ -46,26 +55,46 @@ This is a map-based drawing application where users can draw on Google Maps and 
 ### Component Relationships
 
 ```
-App.tsx
+App.tsx (296 lines, 50% reduction from refactoring)
+├── Custom Hooks Integration
+│   ├── useAuthManager (Firebase auth)
+│   ├── useMap (map controls & state)
+│   ├── useDrawing (drawing state & auto-save)
+│   └── useMenu (UI positioning)
 ├── GoogleMap (from @react-google-maps/api)
-│   └── DrawingCanvas.tsx (custom overlay)
+│   └── DrawingCanvas.tsx (refactored with useDrawingCanvas)
 └── UI Controls (tools, colors, actions)
 ```
 
-- **App.tsx**: Orchestrates all state, handles Firebase operations and authentication
-- **DrawingCanvas.tsx**: Manages drawing logic and coordinate transformations
-- **drawingService.ts**: Abstracts Firestore operations
-- **firebase.ts**: Handles Firebase initialization and anonymous authentication
+**File Structure**:
+- **App.tsx**: Orchestrates custom hooks, minimal state management (296 lines vs 597 original)
+- **DrawingCanvas.tsx**: Canvas rendering with useDrawingCanvas hook integration
+- **hooks/**: Modular state management with comprehensive test coverage (61 tests)
+  - `useMap.ts`: Map controls, geolocation, rotation/tilt (141 lines)
+  - `useDrawing.ts`: Drawing state, delayed auto-save logic (147 lines)
+  - `useDrawingCanvas.ts`: Canvas events, shape creation (378 lines)
+  - `useMenu.ts`: UI menu state (30 lines)
+  - `useAuthManager.ts`: Firebase authentication (existing)
+- **constants/**: Extracted configuration constants
+  - `drawing.ts`: Color palette and drawing defaults
+  - `googleMaps.ts`: Map configuration and libraries
+- **services/**: Firebase integration layer
+  - `drawingService.ts`: Abstracts Firestore operations
+  - `firebase.ts`: Firebase initialization and anonymous authentication
 
 ### Drawing Data Flow
 
-1. User draws on canvas → Pointer/Touch/Mouse events captured with pressure data
-2. Pixels converted to lat/lng using Google Maps projection
-3. Shape objects created with geographic coordinates and pressure information
-4. Pressure-sensitive rendering with dynamic line width based on stylus pressure
-5. On save: Anonymous authentication → Shape[] → Firestore document (with auth check)
-6. On load: Firestore → Shape[] → Canvas redraw with lat/lng → pixel conversion
-7. Map controls: Rotation (45° increments), tilt adjustment (0-67.5°), reset functions
+1. **Input Events**: User draws on canvas → `useDrawingCanvas` captures Pointer/Touch/Mouse events with pressure data
+2. **Coordinate Transformation**: Pixels converted to lat/lng using Google Maps projection
+3. **Shape Creation**: Shape objects created with geographic coordinates and pressure information
+4. **Rendering**: Pressure-sensitive rendering with dynamic line width based on stylus pressure
+5. **Auto-Save Logic**:
+   - Skip saves during continuous drawing (`isDrawing = true`)
+   - Trigger 1-second delayed save after drawing stops
+   - Ensure save when drawing mode ends
+6. **Persistence**: Anonymous authentication → Shape[] → Firestore document (with auth check)
+7. **Loading**: Firestore → Shape[] → Canvas redraw with lat/lng → pixel conversion
+8. **Map Controls**: `useMap` handles rotation (45° increments), tilt adjustment (0-67.5°), reset functions
 
 ### Environment Setup Requirements
 
@@ -74,6 +103,7 @@ The app requires both Google Maps API and Firebase configuration:
 ```bash
 # .env.local (create this file - it's gitignored)
 VITE_GOOGLE_MAPS_API_KEY=xxx
+VITE_MAP_ID=xxx                        # Google Maps style ID for grayscale rendering
 VITE_FIREBASE_API_KEY=xxx
 VITE_FIREBASE_AUTH_DOMAIN=xxx
 VITE_FIREBASE_PROJECT_ID=xxx
@@ -149,14 +179,29 @@ The application supports both manual and automated deployment to Firebase Hostin
 ### Current Features & Limitations
 
 **✅ Implemented Features**:
-- Pen pressure sensitivity for iPad Pencil and compatible stylus devices
-- Multi-touch gesture handling with Pointer API prioritization
-- Map rotation controls (45° increments) with visual compass reset
-- Map tilt adjustment (0-67.5°) with up/down controls and flat reset
-- Vector map rendering with proper Map ID for rotation support
-- Draggable floating control panel for better UX
-- Auto-save on drawing completion with authentication check
-- Firestore emulator support for local development
+- **Drawing Capabilities**:
+  - Pen pressure sensitivity for iPad Pencil and compatible stylus devices
+  - Multi-touch gesture handling with Pointer API prioritization
+  - Multiple drawing tools: pen, line, rectangle, circle, eraser
+  - Pressure-sensitive rendering with dynamic line width
+- **Map Controls**:
+  - Map rotation controls (45° increments) with visual compass reset
+  - Map tilt adjustment (0-67.5°) with up/down controls and flat reset
+  - Vector map rendering with custom grayscale styling
+  - Geolocation integration with map centering
+- **User Interface**:
+  - Draggable floating control panel for better UX
+  - Menu position switching (right/top) and minimization
+  - Color palette and line width controls
+- **Data Management**:
+  - Smart auto-save with 1-second delay after drawing stops
+  - Skips saves during continuous drawing for better performance
+  - Anonymous authentication with automatic sign-in
+  - URL-based drawing sharing with unique IDs
+- **Development & Testing**:
+  - Comprehensive test suite (61+ tests) for custom hooks
+  - Firestore emulator support for local development
+  - Modular architecture with custom React hooks
 
 **⚠️ Current Limitations**:
 1. **No real-time collaboration**: Uses Firestore but not real-time listeners
@@ -176,25 +221,35 @@ npm run test:ui       # Run tests with UI
 npm run test:coverage # Run tests with coverage report
 ```
 
-**Current Test Coverage**:
-- ✅ `coordinateUtils.ts`: Geographic coordinate calculations and transformations
-- ✅ `mapUtils.ts`: Google Maps integration and controls
-- 🚧 Component tests: In progress
-- 🚧 Service layer tests: Planned
+**Current Test Coverage**: 61+ tests across multiple modules
+- ✅ **Custom Hooks**: Comprehensive test coverage for all custom hooks
+  - `useMap.test.ts`: Map controls, geolocation, rotation/tilt (27 tests)
+  - `useMenu.test.ts`: Menu positioning and state management (6 tests)
+  - `useAuthManager.test.ts`: Firebase authentication flows (7+ tests)
+- ✅ **Utilities**: Core logic and calculations
+  - `coordinateUtils.test.ts`: Geographic calculations and transformations (17 tests)
+  - `mapUtils.test.ts`: Google Maps integration and controls (24 tests)
+- 🚧 **Component tests**: Planned for DrawingCanvas and App components
+- 🚧 **Service layer tests**: Planned for Firebase integration
 
 **Test Structure**:
 ```
 src/
-├── test/setup.ts              # Test configuration and mocks
-├── utils/__tests__/
-│   ├── coordinateUtils.test.ts # Geographic calculations (17 tests)
-│   └── mapUtils.test.ts       # Map controls (24 tests)
-└── components/__tests__/      # Component tests (planned)
+├── test/setup.ts                    # Test configuration and mocks
+├── hooks/__tests__/                 # Custom hooks test suite
+│   ├── useMap.test.ts              # Map state management (27 tests)
+│   ├── useMenu.test.ts             # UI menu controls (6 tests)
+│   └── useAuthManager.test.ts      # Firebase auth (7+ tests)
+├── utils/__tests__/                 # Utility functions
+│   ├── coordinateUtils.test.ts     # Geographic calculations (17 tests)
+│   └── mapUtils.test.ts            # Map controls (24 tests)
+└── components/__tests__/           # Component tests (planned)
 ```
 
 **Mocking Strategy**:
 - **Google Maps API**: Mocked in test setup with simplified projection
-- **Firebase**: Manual mocks for service layer tests
+- **Firebase**: Manual mocks for authentication and Firestore operations
+- **Custom Hooks**: Isolated testing with mocked dependencies
 - **Environment**: Handled via vitest.config.ts
 
 ## Infrastructure Management
