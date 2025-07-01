@@ -246,6 +246,11 @@ export const useDrawingCanvas = (
   const handlePointerStart = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
 
+    // If pan tool is selected, let the map handle the event
+    if (selectedTool === 'pan') {
+      return
+    }
+
     // Prioritize pen input over touch
     if (activePointerId !== null && e.pointerType !== 'pen') {
       return
@@ -262,10 +267,15 @@ export const useDrawingCanvas = (
 
     // Capture pointer to ensure we get all events
     e.currentTarget.setPointerCapture(e.pointerId)
-  }, [isDrawing, activePointerId, getEventCoordinates])
+  }, [isDrawing, activePointerId, selectedTool, getEventCoordinates])
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
+
+    // If pan tool is selected, let the map handle the event
+    if (selectedTool === 'pan') {
+      return
+    }
 
     e.preventDefault()
     const coords = getEventCoordinates(e)
@@ -296,6 +306,11 @@ export const useDrawingCanvas = (
   const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || activePointerId !== null) return
 
+    // If pan tool is selected, let the map handle the event
+    if (selectedTool === 'pan') {
+      return
+    }
+
     e.preventDefault()
     const coords = getEventCoordinates(e)
     if (!coords) return
@@ -303,7 +318,7 @@ export const useDrawingCanvas = (
     setIsMouseDown(true)
     setStartPoint({ x: coords.x, y: coords.y })
     setCurrentPixelLine([coords])
-  }, [isDrawing, activePointerId, getEventCoordinates])
+  }, [isDrawing, activePointerId, selectedTool, getEventCoordinates])
 
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !isMouseDown || activePointerId !== null) return

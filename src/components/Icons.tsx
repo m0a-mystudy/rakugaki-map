@@ -71,6 +71,12 @@ export const PenIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor'
   </svg>
 )
 
+export const HandIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2v1m0 4V6a2 2 0 00-2-2 2 2 0 00-2 2v2m0 3V4a2 2 0 00-2-2 2 2 0 00-2 2v5m0 0v6a8 8 0 008 8h0a8 8 0 008-8v-1a2 2 0 00-2-2h-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
 export const LineIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M5 19L19 5" stroke={color} strokeWidth="2" strokeLinecap="round"/>

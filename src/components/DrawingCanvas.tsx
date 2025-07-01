@@ -355,7 +355,7 @@ function DrawingCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className={`drawing-canvas ${isDrawing ? 'drawing' : ''} ${selectedTool === 'eraser' ? 'eraser-cursor' : ''}`}
+      className={`drawing-canvas ${isDrawing ? 'drawing' : ''} ${selectedTool === 'eraser' ? 'eraser-cursor' : ''} ${selectedTool === 'pan' ? 'pan-mode' : ''}`}
       onPointerDown={handlePointerStart}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
