@@ -11,7 +11,7 @@ import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
   CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
-  ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon, DownloadIcon
+  ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon, DownloadIcon, HandIcon
 } from './components/Icons'
 import './App.css'
 
@@ -191,24 +191,6 @@ function App() {
             </div>
 
             <div className="action-buttons">
-              <div className="history-controls">
-                <button
-                  className={`action-button undo ${canUndo ? '' : 'disabled'}`}
-                  onClick={undo}
-                  disabled={!canUndo}
-                  title="元に戻す"
-                >
-                  <UndoIcon size={16} />
-                </button>
-                <button
-                  className={`action-button redo ${canRedo ? '' : 'disabled'}`}
-                  onClick={redo}
-                  disabled={!canRedo}
-                  title="やり直し"
-                >
-                  <RedoIcon size={16} />
-                </button>
-              </div>
               {!isDrawing && (
                 <>
                   <button
@@ -302,6 +284,13 @@ function App() {
               <h3>ツール</h3>
               <div className="tool-buttons">
                 <button
+                  className={`tool-button ${selectedTool === 'pan' ? 'active' : ''}`}
+                  onClick={() => setSelectedTool('pan')}
+                  title="移動"
+                >
+                  <HandIcon size={20} />
+                </button>
+                <button
                   className={`tool-button ${selectedTool === 'pen' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('pen')}
                   title="ペン"
@@ -339,6 +328,26 @@ function App() {
               </div>
             </div>
 
+            <div className="history-section">
+              <div className="history-buttons">
+                <button
+                  className={`tool-button ${canUndo ? '' : 'disabled'}`}
+                  onClick={undo}
+                  disabled={!canUndo}
+                  title="元に戻す"
+                >
+                  <UndoIcon size={20} />
+                </button>
+                <button
+                  className={`tool-button ${canRedo ? '' : 'disabled'}`}
+                  onClick={redo}
+                  disabled={!canRedo}
+                  title="やり直し"
+                >
+                  <RedoIcon size={20} />
+                </button>
+              </div>
+            </div>
 
             <div className="color-section">
               <h3>色</h3>
