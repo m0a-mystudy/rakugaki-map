@@ -193,7 +193,8 @@
 }
 
 .controls.top .rotation-controls,
-.controls.top .tilt-controls {
+.controls.top .tilt-controls,
+.controls.top .history-controls {
   display: flex;
   gap: 4px;
 }
@@ -301,14 +302,16 @@
   }
 
   .rotation-controls .action-button,
-  .tilt-controls .action-button {
+  .tilt-controls .action-button,
+  .history-controls .action-button {
     min-width: 30px;
     padding: 6px 2px;
     font-size: 14px;
   }
 
   .controls.top .rotation-controls,
-  .controls.top .tilt-controls {
+  .controls.top .tilt-controls,
+  .controls.top .history-controls {
     flex-shrink: 0;
   }
 
@@ -365,12 +368,14 @@
   gap: 8px;
 }
 
-.rotation-controls {
+.rotation-controls,
+.history-controls {
   display: flex;
   gap: 4px;
 }
 
-.rotation-controls .action-button {
+.rotation-controls .action-button,
+.history-controls .action-button {
   flex: 1;
   min-width: 35px;
   padding: 8px 4px;
@@ -416,6 +421,11 @@
 
 .action-button:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.history-controls .action-button.disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
