@@ -6,6 +6,9 @@ dist/
 # Test coverage
 coverage/
 
+# Serena (MCP server) cache and config
+.serena/
+
 # Terraform sensitive files
 terraform.tfvars.local
 *.tfvars.local
