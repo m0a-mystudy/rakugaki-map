@@ -83,17 +83,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   }
 
   if (!isVisible) {
-    return (
-      <div className="layer-panel-collapsed">
-        <button
-          onClick={onToggleVisibility}
-          className="layer-toggle-btn"
-          title="Show Layers"
-        >
-          📋
-        </button>
-      </div>
-    )
+    return null
   }
 
   return (
@@ -223,31 +213,6 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .layer-panel-collapsed {
-          position: fixed;
-          right: 20px;
-          top: 160px;
-          z-index: 1000;
-        }
-
-        .layer-toggle-btn {
-          width: 40px;
-          height: 40px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          background: rgba(255, 255, 255, 0.95);
-          cursor: pointer;
-          font-size: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .layer-toggle-btn:hover {
-          background: rgba(255, 255, 255, 1);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
 
         .layer-panel-header {
           display: flex;

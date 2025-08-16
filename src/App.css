@@ -613,13 +613,6 @@ h3 {
 }
 
 /* Layer Panel Positioning */
-.layer-panel-collapsed {
-  position: fixed;
-  right: 20px;
-  top: 160px;
-  z-index: 1000;
-}
-
 .layer-panel {
   position: fixed;
   right: 20px;
