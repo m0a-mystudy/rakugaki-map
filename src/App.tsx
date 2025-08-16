@@ -273,6 +273,16 @@ function App() {
               <>
             <div className="tool-section">
               <h3>ツール</h3>
+              <div className="layer-controls">
+                <button
+                  className={`action-button layers ${isLayerPanelVisible ? 'active' : ''}`}
+                  onClick={() => setIsLayerPanelVisible(!isLayerPanelVisible)}
+                  title="レイヤー"
+                >
+                  <LayersIcon size={16} />
+                  レイヤー
+                </button>
+              </div>
               <div className="tool-buttons">
                 <button
                   className={`tool-button ${selectedTool === 'pan' ? 'active' : ''}`}
