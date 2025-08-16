@@ -37,24 +37,9 @@ variable "billing_account" {
 }
 
 variable "allowed_domains" {
-  description = "List of allowed domains for API key restrictions"
+  description = "List of allowed domains for API key restrictions (empty = no restrictions for dev)"
   type        = list(string)
-  default     = [
-    "localhost:*",
-    "localhost",
-    "127.0.0.1:*",
-    "127.0.0.1",
-    "https://localhost:*",
-    "http://localhost:*",
-    "rakugakimap-dev.web.app",
-    "https://rakugakimap-dev.web.app",
-    "rakugakimap-dev.firebaseapp.com",
-    "https://rakugakimap-dev.firebaseapp.com",
-    "rakugakimap-dev--*.web.app",
-    "https://rakugakimap-dev--*.web.app",
-    "rakugakimap-dev-*.web.app",
-    "https://rakugakimap-dev-*.web.app"
-  ]
+  default     = []
 }
 
 # Firebase configuration managed via Secret Manager (manual)
