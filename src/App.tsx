@@ -265,7 +265,7 @@ function App() {
               <>
             <div className="tool-section">
               <h3>ツール</h3>
-              <div className="layer-controls">
+              <div className="tool-buttons">
                 <button
                   className={`tool-button ${isLayerPanelVisible ? 'active' : ''}`}
                   onClick={() => setIsLayerPanelVisible(!isLayerPanelVisible)}
@@ -273,8 +273,6 @@ function App() {
                 >
                   <LayersIcon size={20} />
                 </button>
-              </div>
-              <div className="tool-buttons">
                 <button
                   className={`tool-button ${selectedTool === 'pan' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('pan')}

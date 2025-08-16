@@ -632,16 +632,3 @@ h3 {
   border-color: #2196F3;
   color: #1976D2;
 }
-
-/* Layer controls in drawing mode */
-.layer-controls {
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: center;
-}
-
-.layer-controls .tool-button {
-  margin: 0;
-}
