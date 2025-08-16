@@ -22,3 +22,12 @@
   touch-action: none;
   -ms-touch-action: none;
 }
+
+.drawing-canvas.pan-mode {
+  pointer-events: none !important;
+  cursor: grab;
+}
+
+.drawing-canvas.pan-mode:active {
+  cursor: grabbing;
+}
