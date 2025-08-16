@@ -8,7 +8,7 @@ import { DRAWING_COLORS } from './constants/drawing'
 import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
 import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
-  CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon,
+  CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon, HandIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
   ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon
 } from './components/Icons'
