@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { generateDrawingId, saveDrawing, loadDrawing } from '../services/drawingService'
-import type { DrawingTool, Shape } from '../types'
+import type { DrawingTool, Shape, Layer } from '../types'
 import { useDrawingHistory } from './useDrawingHistory'
+import { useLayerManager } from './useLayerManager'
 
 const DEFAULT_COLOR = '#ff4757'
 const DEFAULT_LINE_WIDTH = 3
@@ -25,6 +26,8 @@ export interface UseDrawingReturn {
   isDrawing: boolean
   isSaving: boolean
   hasCurrentDrawing: boolean
+  layers: Layer[]
+  activeLayerId: string | null
   setShapes: (shapes: Shape[]) => void
   setSelectedColor: (color: string) => void
   setSelectedTool: (tool: DrawingTool) => void
@@ -39,6 +42,17 @@ export interface UseDrawingReturn {
   redo: () => void
   canUndo: boolean
   canRedo: boolean
+  addLayer: (name?: string) => string
+  removeLayer: (layerId: string) => void
+  updateLayer: (layerId: string, updates: Partial<Omit<Layer, 'id'>>) => void
+  setActiveLayer: (layerId: string) => void
+  reorderLayers: (fromIndex: number, toIndex: number) => void
+  toggleLayerVisibility: (layerId: string) => void
+  toggleLayerLock: (layerId: string) => void
+  getVisibleLayers: () => Layer[]
+  getShapesByLayer: (layerId: string) => Shape[]
+  isLayerLocked: (layerId: string) => boolean
+  isLayerVisible: (layerId: string) => boolean
 }
 
 /**
@@ -74,6 +88,7 @@ export const useDrawing = (
   const isHistoryOperation = useRef(false)
 
   const history = useDrawingHistory()
+  const layerManager = useLayerManager()
 
   // Initialize drawing ID from URL or generate new one
   useEffect(() => {
@@ -98,6 +113,13 @@ export const useDrawing = (
         setCenter(data.center)
         setZoom(data.zoom)
         history.clear()
+
+        if (data.layers && data.layers.length > 0) {
+          layerManager.setLayers(data.layers)
+          if (data.activeLayerId) {
+            layerManager.setActiveLayerId(data.activeLayerId)
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load drawing:', error)
@@ -114,10 +136,14 @@ export const useDrawing = (
   const getShapes = useCallback(() => shapesRef.current, [])
 
   const addShape = useCallback((shape: Shape) => {
-    const command = history.createAddShapeCommand(shape, getShapes, setShapes)
+    const shapeWithLayer = {
+      ...shape,
+      layerId: layerManager.activeLayerId || layerManager.layers[0]?.id
+    }
+    const command = history.createAddShapeCommand(shapeWithLayer, getShapes, setShapes)
     command.execute()
     history.addCommand(command)
-  }, [getShapes, history, shapes.length])
+  }, [getShapes, history, shapes.length, layerManager.activeLayerId, layerManager.layers])
 
   const clearAllShapes = useCallback(() => {
     if (shapes.length === 0) return
@@ -144,13 +170,20 @@ export const useDrawing = (
     setIsSaving(true)
     try {
       const currentMapState = getCurrentMapState()
-      await saveDrawing(drawingId, shapes, currentMapState.center, currentMapState.zoom)
+      await saveDrawing(
+        drawingId,
+        shapes,
+        currentMapState.center,
+        currentMapState.zoom,
+        layerManager.layers,
+        layerManager.activeLayerId
+      )
     } catch (error) {
       console.error('Failed to auto-save drawing:', error)
     } finally {
       setIsSaving(false)
     }
-  }, [user, drawingId, shapes, getCurrentMapState])
+  }, [user, drawingId, shapes, getCurrentMapState, layerManager.layers, layerManager.activeLayerId])
 
   const undo = useCallback(() => {
     if (history.canUndo()) {
@@ -231,6 +264,10 @@ export const useDrawing = (
     alert('共有リンクをコピーしました！')
   }, [])
 
+  const getShapesByLayer = useCallback((layerId: string) => {
+    return shapes.filter(shape => shape.layerId === layerId)
+  }, [shapes])
+
   return {
     drawingId,
     shapes,
@@ -240,6 +277,8 @@ export const useDrawing = (
     isDrawing,
     isSaving,
     hasCurrentDrawing,
+    layers: layerManager.layers,
+    activeLayerId: layerManager.activeLayerId,
     setShapes,
     setSelectedColor,
     setSelectedTool,
@@ -253,6 +292,17 @@ export const useDrawing = (
     undo,
     redo,
     canUndo: history.canUndo(),
-    canRedo: history.canRedo()
+    canRedo: history.canRedo(),
+    addLayer: layerManager.addLayer,
+    removeLayer: layerManager.removeLayer,
+    updateLayer: layerManager.updateLayer,
+    setActiveLayer: layerManager.setActiveLayer,
+    reorderLayers: layerManager.reorderLayers,
+    toggleLayerVisibility: layerManager.toggleLayerVisibility,
+    toggleLayerLock: layerManager.toggleLayerLock,
+    getVisibleLayers: layerManager.getVisibleLayers,
+    getShapesByLayer,
+    isLayerLocked: layerManager.isLayerLocked,
+    isLayerVisible: layerManager.isLayerVisible
   }
 }

@@ -611,3 +611,24 @@ h3 {
 .error-message:hover {
   background-color: #ffcccc;
 }
+
+/* Layer Panel Positioning */
+.layer-panel-collapsed {
+  position: fixed;
+  right: 20px;
+  top: 160px;
+  z-index: 1000;
+}
+
+.layer-panel {
+  position: fixed;
+  right: 20px;
+  top: 160px;
+  z-index: 1000;
+}
+
+.action-button.layers.active {
+  background-color: #e3f2fd;
+  border-color: #2196F3;
+  color: #1976D2;
+}

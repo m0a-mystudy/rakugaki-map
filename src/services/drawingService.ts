@@ -7,7 +7,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
-import type { DrawingData, Shape } from '../types'
+import type { DrawingData, Shape, Layer } from '../types'
 
 const COLLECTION_NAME = 'drawings'
 
@@ -25,7 +25,9 @@ export const saveDrawing = async (
   drawingId: string,
   shapes: Shape[],
   center: { lat: number; lng: number },
-  zoom: number
+  zoom: number,
+  layers?: Layer[],
+  activeLayerId?: string | null
 ): Promise<void> => {
   try {
     const drawingRef = doc(db, COLLECTION_NAME, drawingId)
@@ -33,6 +35,8 @@ export const saveDrawing = async (
       shapes,
       center,
       zoom,
+      ...(layers && { layers }),
+      ...(activeLayerId && { activeLayerId }),
       updatedAt: serverTimestamp()
     }
 
@@ -62,6 +66,8 @@ export const loadDrawing = async (drawingId: string): Promise<DrawingData | null
       return {
         id: drawingId,
         shapes: data.shapes || [],
+        layers: data.layers,
+        activeLayerId: data.activeLayerId,
         center: data.center,
         zoom: data.zoom,
         createdAt: (data.createdAt as Timestamp).toDate(),
