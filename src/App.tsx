@@ -245,14 +245,6 @@ function App() {
                     </button>
                   </div>
                   <button
-                    className={`action-button layers ${isLayerPanelVisible ? 'active' : ''}`}
-                    onClick={() => setIsLayerPanelVisible(!isLayerPanelVisible)}
-                    title="レイヤー"
-                  >
-                    <LayersIcon size={16} />
-                    レイヤー
-                  </button>
-                  <button
                     className="action-button share"
                     onClick={handleShare}
                   >
