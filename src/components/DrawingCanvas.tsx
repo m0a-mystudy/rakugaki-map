@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { DrawingTool, Shape } from '../types'
+import type { DrawingTool, Shape, Layer } from '../types'
 import { useDrawingCanvas } from '../hooks/useDrawingCanvas'
 import './DrawingCanvas.css'
 
@@ -11,6 +11,7 @@ interface DrawingCanvasProps {
   selectedTool: DrawingTool
   lineWidth: number
   shapes: Shape[]
+  layers: Layer[]
   onShapesChange: (shapes: Shape[]) => void
   onAddShape?: (shape: Shape) => void
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
@@ -23,6 +24,7 @@ function DrawingCanvas({
   selectedTool,
   lineWidth,
   shapes,
+  layers,
   onShapesChange,
   onAddShape,
   onCurrentDrawingChange
@@ -100,8 +102,21 @@ function DrawingCanvas({
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
-        // Draw existing shapes
-        shapesRef.current.forEach(shape => {
+        // Get visible layers sorted by order (bottom to top)
+        const visibleLayers = layers
+          .filter(layer => layer.visible)
+          .sort((a, b) => a.order - b.order)
+
+        // Draw existing shapes by layer
+        visibleLayers.forEach(layer => {
+          const layerShapes = shapesRef.current.filter(shape =>
+            shape.layerId === layer.id || (!shape.layerId && layer.order === 0)
+          )
+
+          layerShapes.forEach(shape => {
+            // Save current globalAlpha and apply layer opacity
+            const originalAlpha = ctx.globalAlpha
+            ctx.globalAlpha = layer.opacity
           ctx.strokeStyle = shape.color
 
           // Apply zoom-based line width scaling
@@ -241,6 +256,10 @@ function DrawingCanvas({
               ctx.stroke()
             }
           }
+
+            // Restore original globalAlpha
+            ctx.globalAlpha = originalAlpha
+          })
         })
 
         // Draw current shape being drawn
@@ -350,7 +369,7 @@ function DrawingCanvas({
         overlayRef.current.setMap(null)
       }
     }
-  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth, isMouseDown, hoverPoint, isDrawing, shapesRef, overlayRef])
+  }, [map, currentPixelLine, startPoint, selectedColor, selectedTool, lineWidth, isMouseDown, hoverPoint, isDrawing, shapesRef, overlayRef, layers])
 
   return (
     <canvas

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
 import DrawingCanvas from './components/DrawingCanvas'
+import LayerPanel from './components/LayerPanel'
 import { useAuthManager } from './hooks/useAuthManager'
 import { useMap } from './hooks/useMap'
 import { useDrawing } from './hooks/useDrawing'
@@ -79,6 +81,8 @@ function App() {
   // Drawing state and smart auto-save
   const {
     shapes,
+    layers,
+    activeLayerId,
     selectedColor,
     selectedTool,
     lineWidth,
@@ -94,7 +98,14 @@ function App() {
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    addLayer,
+    removeLayer,
+    updateLayer,
+    setActiveLayer,
+    reorderLayers,
+    toggleLayerVisibility,
+    toggleLayerLock
   } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
 
   // UI menu state
@@ -104,6 +115,9 @@ function App() {
     toggleMenuPosition,
     toggleMenuMinimize
   } = useMenu()
+
+  // Layer panel state
+  const [isLayerPanelVisible, setIsLayerPanelVisible] = useState(false)
 
 
   return (
@@ -132,6 +146,7 @@ function App() {
               selectedTool={selectedTool}
               lineWidth={lineWidth}
               shapes={shapes}
+              layers={layers}
               onShapesChange={setShapes}
               onAddShape={addShape}
             />
@@ -226,7 +241,7 @@ function App() {
                       onClick={resetTilt}
                       title="チルトリセット（平面表示）"
                     >
-                      <LayersIcon size={16} />
+                      <CompassIcon size={16} />
                     </button>
                   </div>
                   <button
@@ -251,6 +266,13 @@ function App() {
             <div className="tool-section">
               <h3>ツール</h3>
               <div className="tool-buttons">
+                <button
+                  className={`tool-button ${isLayerPanelVisible ? 'active' : ''}`}
+                  onClick={() => setIsLayerPanelVisible(!isLayerPanelVisible)}
+                  title="レイヤー"
+                >
+                  <LayersIcon size={20} />
+                </button>
                 <button
                   className={`tool-button ${selectedTool === 'pan' ? 'active' : ''}`}
                   onClick={() => setSelectedTool('pan')}
@@ -347,6 +369,21 @@ function App() {
           </>
         )}
       </div>
+
+      {/* Layer Panel */}
+      <LayerPanel
+        layers={layers}
+        activeLayerId={activeLayerId}
+        addLayer={addLayer}
+        removeLayer={removeLayer}
+        updateLayer={updateLayer}
+        setActiveLayer={setActiveLayer}
+        reorderLayers={reorderLayers}
+        toggleLayerVisibility={toggleLayerVisibility}
+        toggleLayerLock={toggleLayerLock}
+        isVisible={isLayerPanelVisible}
+        onToggleVisibility={() => setIsLayerPanelVisible(!isLayerPanelVisible)}
+      />
     </div>
   )
 }

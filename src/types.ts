@@ -13,11 +13,23 @@ export interface Shape {
   color: string
   width: number
   baseZoom?: number
+  layerId?: string
+}
+
+export interface Layer {
+  id: string
+  name: string
+  visible: boolean
+  locked: boolean
+  opacity: number
+  order: number
 }
 
 export interface DrawingData {
   id?: string
   shapes: Shape[]
+  layers?: Layer[]
+  activeLayerId?: string
   center: {
     lat: number
     lng: number
