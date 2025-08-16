@@ -585,22 +585,6 @@ h3 {
   cursor: pointer;
 }
 
-/* PDF Export Button Styles */
-.action-button.export {
-  background-color: #27ae60;
-  color: white;
-  border-color: #27ae60;
-}
-
-.action-button.export:hover:not(:disabled) {
-  background-color: #229954;
-}
-
-.action-button.export:disabled {
-  background-color: #95a5a6;
-  border-color: #95a5a6;
-  cursor: not-allowed;
-}
 
 /* Error Message Styles */
 .error-message {

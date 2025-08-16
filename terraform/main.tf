@@ -69,7 +69,7 @@ resource "google_project_service" "places_api" {
   disable_on_destroy = false
 }
 
-# Google Maps Static API (required for PDF export)
+# Google Maps Static API
 resource "google_project_service" "maps_static_api" {
   service = "static-maps-backend.googleapis.com"
   disable_on_destroy = false

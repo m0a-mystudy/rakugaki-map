@@ -141,9 +141,3 @@ export const RedoIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor
     <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
-
-export const DownloadIcon: React.FC<IconProps> = ({ size = 20, color = 'currentColor', className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
