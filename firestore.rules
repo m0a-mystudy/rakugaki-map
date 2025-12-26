@@ -2,8 +2,14 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // drawings コレクション：読み取りは全員、書き込みは認証済みユーザーのみ
+    // drawings コレクション（v1ベクター形式）：読み取りは全員、書き込みは認証済みユーザーのみ
     match /drawings/{documentId} {
+      allow read: if true;                    // 誰でも描画を見ることができる
+      allow write: if request.auth != null;  // 認証済みユーザーのみ編集可能
+    }
+
+    // drawings_v2 コレクション（v2タイル形式）：読み取りは全員、書き込みは認証済みユーザーのみ
+    match /drawings_v2/{documentId} {
       allow read: if true;                    // 誰でも描画を見ることができる
       allow write: if request.auth != null;  // 認証済みユーザーのみ編集可能
     }

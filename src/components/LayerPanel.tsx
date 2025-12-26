@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import type { Layer } from '../types'
+import type { LayerV2 } from '../types'
 
 interface LayerPanelProps {
-  layers: Layer[]
+  layers: LayerV2[]
   activeLayerId: string | null
   addLayer: (name?: string) => string
   removeLayer: (layerId: string) => void
-  updateLayer: (layerId: string, updates: Partial<Omit<Layer, 'id'>>) => void
+  updateLayer: (layerId: string, updates: Partial<Omit<LayerV2, 'id' | 'tiles'>>) => void
   setActiveLayer: (layerId: string) => void
   reorderLayers: (fromIndex: number, toIndex: number) => void
   toggleLayerVisibility: (layerId: string) => void
@@ -34,7 +34,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
 
   const sortedLayers = [...layers].sort((a, b) => b.order - a.order)
 
-  const handleStartEdit = (layer: Layer) => {
+  const handleStartEdit = (layer: LayerV2) => {
     setEditingLayerId(layer.id)
     setEditingName(layer.name)
   }

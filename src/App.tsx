@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { GoogleMap, LoadScript } from '@react-google-maps/api'
-import DrawingCanvas from './components/DrawingCanvas'
+import DrawingCanvasV2 from './components/DrawingCanvasV2'
 import LayerPanel from './components/LayerPanel'
 import { useAuthManager } from './hooks/useAuthManager'
 import { useMap } from './hooks/useMap'
-import { useDrawing } from './hooks/useDrawing'
+import { useDrawingV2 } from './hooks/useDrawingV2'
 import { useMenu } from './hooks/useMenu'
 import { DRAWING_COLORS } from './constants/drawing'
 import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
@@ -73,28 +73,27 @@ function App() {
     resetMapRotation,
     adjustTilt,
     resetTilt,
-    getCurrentMapState,
-    setCenter,
-    setZoom
+    getCurrentMapState
   } = useMap()
 
-  // Drawing state and smart auto-save
+  // Drawing state and smart auto-save (V2 - tile-based)
   const {
-    shapes,
     layers,
     activeLayerId,
+    baseZoom,
     selectedColor,
     selectedTool,
     lineWidth,
     isDrawing,
     isSaving,
-    setShapes,
+    tileCache,
     setSelectedColor,
     setSelectedTool,
     setLineWidth,
     setIsDrawing,
+    setHasCurrentDrawing,
     handleShare,
-    addShape,
+    onDrawingComplete,
     undo,
     redo,
     canUndo,
@@ -106,7 +105,7 @@ function App() {
     reorderLayers,
     toggleLayerVisibility,
     toggleLayerLock
-  } = useDrawing(user, getCurrentMapState, setCenter, setZoom)
+  } = useDrawingV2(user, getCurrentMapState)
 
   // UI menu state
   const {
@@ -138,17 +137,18 @@ function App() {
             options={MAP_OPTIONS}
           />
           {map && (
-            <DrawingCanvas
+            <DrawingCanvasV2
               map={map}
               isDrawing={isDrawing}
-              onDrawingChange={setIsDrawing}
               selectedColor={selectedColor}
               selectedTool={selectedTool}
               lineWidth={lineWidth}
-              shapes={shapes}
               layers={layers}
-              onShapesChange={setShapes}
-              onAddShape={addShape}
+              activeLayerId={activeLayerId}
+              baseZoom={baseZoom}
+              tileCache={tileCache}
+              onDrawingComplete={onDrawingComplete}
+              onCurrentDrawingChange={setHasCurrentDrawing}
             />
           )}
         </div>
