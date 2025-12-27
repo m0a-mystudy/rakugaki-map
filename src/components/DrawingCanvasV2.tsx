@@ -58,6 +58,7 @@ function DrawingCanvasV2({
     selectedColor,
     lineWidth,
     activeLayerId,
+    baseZoom,
     tileCache,
     onDrawingComplete,
     onCurrentDrawingChange

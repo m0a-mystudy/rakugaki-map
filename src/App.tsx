@@ -10,7 +10,7 @@ import { DRAWING_COLORS } from './constants/drawing'
 import { MAP_CONTAINER_STYLE, LIBRARIES } from './constants/googleMaps'
 import {
   MenuIcon, MinimizeIcon, LocationIcon, RotateLeftIcon, RotateRightIcon,
-  CompassIcon, ChevronUpIcon, ChevronDownIcon, LayersIcon, PenIcon, HandIcon,
+  CompassIcon, LayersIcon, PenIcon, HandIcon,
   LineIcon, SquareIcon, CircleIcon, EraserIcon, SaveIcon, ShareIcon,
   ArrowUpIcon, ArrowRightIcon, UndoIcon, RedoIcon
 } from './components/Icons'
@@ -42,7 +42,7 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   tilt: 0,
   heading: 0,
   headingInteractionEnabled: true,
-  tiltInteractionEnabled: true,
+  tiltInteractionEnabled: false,  // 傾き無効化
 }
 
 /**
@@ -71,8 +71,6 @@ function App() {
     handleLocateMe,
     rotateMap,
     resetMapRotation,
-    adjustTilt,
-    resetTilt,
     getCurrentMapState
   } = useMap()
 
@@ -217,29 +215,6 @@ function App() {
                       className="action-button reset-rotation"
                       onClick={resetMapRotation}
                       title="回転をリセット"
-                    >
-                      <CompassIcon size={16} />
-                    </button>
-                  </div>
-                  <div className="tilt-controls">
-                    <button
-                      className="action-button tilt-up"
-                      onClick={() => adjustTilt(15)}
-                      title="チルトアップ（15度）"
-                    >
-                      <ChevronUpIcon size={16} />
-                    </button>
-                    <button
-                      className="action-button tilt-down"
-                      onClick={() => adjustTilt(-15)}
-                      title="チルトダウン（15度）"
-                    >
-                      <ChevronDownIcon size={16} />
-                    </button>
-                    <button
-                      className="action-button reset-tilt"
-                      onClick={resetTilt}
-                      title="チルトリセット（平面表示）"
                     >
                       <CompassIcon size={16} />
                     </button>

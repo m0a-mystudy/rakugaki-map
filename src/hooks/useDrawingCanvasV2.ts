@@ -48,6 +48,7 @@ export const useDrawingCanvasV2 = (
   selectedColor: string,
   lineWidth: number,
   activeLayerId: string | null,
+  baseZoom: number,
   tileCache: TileCacheManager,
   onDrawingComplete?: () => void,
   onCurrentDrawingChange?: (hasCurrentDrawing: boolean) => void
@@ -170,13 +171,17 @@ export const useDrawingCanvasV2 = (
     tileCoord: TileCoord,
     points: { x: number; y: number; pressure?: number }[],
     mapBounds: MapBounds,
-    mapSize: { width: number; height: number }
+    mapSize: { width: number; height: number },
+    currentZoom: number
   ) => {
     if (points.length < 2) return
 
     const canvas = tileCache.getTileCanvas(layerId, tileCoord)
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
+    // ズームレベルの差に基づいて線幅をスケール
+    const zoomScale = Math.pow(2, baseZoom - currentZoom)
 
     ctx.strokeStyle = selectedColor
     ctx.lineCap = 'round'
@@ -198,9 +203,9 @@ export const useDrawingCanvasV2 = (
       const local1 = pixelToTileLocal(p1.x, p1.y, tileCoord, mapBounds, mapSize)
       const local2 = pixelToTileLocal(p2.x, p2.y, tileCoord, mapBounds, mapSize)
 
-      // 筆圧に基づく線幅
+      // 筆圧に基づく線幅（ズームスケール適用）
       const pressure = p1.pressure ?? 0.5
-      const dynamicWidth = lineWidth * (0.3 + pressure * 0.7)
+      const dynamicWidth = lineWidth * (0.3 + pressure * 0.7) * zoomScale
       ctx.lineWidth = dynamicWidth
 
       ctx.moveTo(local1.x, local1.y)
@@ -211,7 +216,7 @@ export const useDrawingCanvasV2 = (
 
     // タイルを dirty としてマーク
     tileCache.markTileDirty(layerId, tileCoord)
-  }, [selectedColor, selectedTool, lineWidth, tileCache, pixelToTileLocal])
+  }, [selectedColor, selectedTool, lineWidth, baseZoom, tileCache, pixelToTileLocal])
 
   /**
    * 描画を完了（タイルに確定）
@@ -234,14 +239,14 @@ export const useDrawingCanvasV2 = (
       return
     }
 
-    const { mapBounds, zoom, mapSize } = mapState
+    const { mapBounds, mapSize, zoom: currentZoom } = mapState
 
     if (selectedTool === 'pen' || selectedTool === 'eraser') {
-      // 影響するタイルを特定
+      // 影響するタイルを特定（baseZoomを使用）
       const affectedTiles = getAffectedTiles(
         currentPixelLine,
         lineWidth,
-        zoom,
+        baseZoom,
         mapBounds,
         mapSize
       )
@@ -253,7 +258,8 @@ export const useDrawingCanvasV2 = (
           tileCoord,
           currentPixelLine,
           mapBounds,
-          mapSize
+          mapSize,
+          currentZoom
         )
       }
     } else if (selectedTool === 'line' && startPoint && currentPixelLine.length > 0) {
@@ -263,7 +269,7 @@ export const useDrawingCanvasV2 = (
       const affectedTiles = getAffectedTiles(
         linePoints,
         lineWidth,
-        zoom,
+        baseZoom,
         mapBounds,
         mapSize
       )
@@ -274,7 +280,8 @@ export const useDrawingCanvasV2 = (
           tileCoord,
           linePoints,
           mapBounds,
-          mapSize
+          mapSize,
+          currentZoom
         )
       }
     } else if (selectedTool === 'rectangle' && startPoint && currentPixelLine.length > 0) {
@@ -290,7 +297,7 @@ export const useDrawingCanvasV2 = (
       const affectedTiles = getAffectedTiles(
         rectPoints,
         lineWidth,
-        zoom,
+        baseZoom,
         mapBounds,
         mapSize
       )
@@ -301,7 +308,8 @@ export const useDrawingCanvasV2 = (
           tileCoord,
           rectPoints,
           mapBounds,
-          mapSize
+          mapSize,
+          currentZoom
         )
       }
     } else if (selectedTool === 'circle' && startPoint && currentPixelLine.length > 0) {
@@ -325,7 +333,7 @@ export const useDrawingCanvasV2 = (
       const affectedTiles = getAffectedTiles(
         circlePoints,
         lineWidth,
-        zoom,
+        baseZoom,
         mapBounds,
         mapSize
       )
@@ -336,7 +344,8 @@ export const useDrawingCanvasV2 = (
           tileCoord,
           circlePoints,
           mapBounds,
-          mapSize
+          mapSize,
+          currentZoom
         )
       }
     }

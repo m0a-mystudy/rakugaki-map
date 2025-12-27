@@ -155,7 +155,7 @@ export const saveDrawingV2 = async (
         tiles: layer.tiles.map(tile => ({
           coord: tile.coord,
           storageUrl: tile.storageUrl,
-          updatedAt: tile.updatedAt
+          updatedAt: Timestamp.fromDate(tile.updatedAt instanceof Date ? tile.updatedAt : new Date(tile.updatedAt))
         }))
       })),
       activeLayerId,
@@ -163,15 +163,30 @@ export const saveDrawingV2 = async (
       updatedAt: serverTimestamp()
     }
 
+    console.log('📝 Saving to Firestore:', {
+      drawingId,
+      layerCount: updatedLayers.length,
+      tileCount: updatedLayers.reduce((sum, l) => sum + l.tiles.length, 0),
+      baseZoom,
+      drawingData
+    })
+
     const existingDoc = await getDoc(drawingRef)
 
-    if (existingDoc.exists()) {
-      await updateDoc(drawingRef, drawingData)
-    } else {
-      await setDoc(drawingRef, {
-        ...drawingData,
-        createdAt: serverTimestamp()
-      })
+    try {
+      if (existingDoc.exists()) {
+        await updateDoc(drawingRef, drawingData)
+        console.log('✅ Firestore updated')
+      } else {
+        await setDoc(drawingRef, {
+          ...drawingData,
+          createdAt: serverTimestamp()
+        })
+        console.log('✅ Firestore created')
+      }
+    } catch (firestoreError) {
+      console.error('❌ Firestore write failed:', firestoreError)
+      throw firestoreError
     }
 
     // dirty フラグをクリア
