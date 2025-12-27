@@ -109,7 +109,9 @@ export const useDrawingV2 = (
 
       // Set base zoom from current map state
       const mapState = getCurrentMapState()
-      setBaseZoom(Math.floor(mapState.zoom))
+      const currentZoom = Math.floor(mapState.zoom)
+      console.log('🗺️ Setting baseZoom:', currentZoom, 'from map state:', mapState)
+      setBaseZoom(currentZoom)
     }
   }, [])
 
@@ -192,6 +194,22 @@ export const useDrawingV2 = (
       }
     }
   }, [isDrawing, scheduleAutoSave, tileCache])
+
+  // Update baseZoom when starting drawing mode if no tiles exist yet
+  useEffect(() => {
+    if (isDrawing) {
+      // Check if there are any existing tiles
+      const hasTiles = layers.some(layer => layer.tiles.length > 0)
+      if (!hasTiles) {
+        const mapState = getCurrentMapState()
+        const currentZoom = Math.floor(mapState.zoom)
+        if (currentZoom !== baseZoom) {
+          console.log('🗺️ Updating baseZoom from', baseZoom, 'to', currentZoom)
+          setBaseZoom(currentZoom)
+        }
+      }
+    }
+  }, [isDrawing, layers, baseZoom, getCurrentMapState])
 
   // Cleanup timeout on unmount
   useEffect(() => {

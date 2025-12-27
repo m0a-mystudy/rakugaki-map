@@ -234,6 +234,11 @@ function App() {
                   保存中...
                 </div>
               )}
+              {isDrawing && (
+                <div className="zoom-indicator">
+                  baseZoom: {baseZoom}
+                </div>
+              )}
             </div>
 
             {isDrawing && (
