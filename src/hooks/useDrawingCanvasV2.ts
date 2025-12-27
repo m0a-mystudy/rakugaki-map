@@ -39,8 +39,6 @@ export interface UseDrawingCanvasV2Return {
   cleanupOverlay: () => void
 }
 
-const TILE_SIZE_PX = 256
-
 export const useDrawingCanvasV2 = (
   map: google.maps.Map | null,
   isDrawing: boolean,
@@ -158,8 +156,8 @@ export const useDrawingCanvasV2 = (
     const tilePixelSize = worldWidth / totalTiles
 
     return {
-      x: ((pixelX - tilePixel.x) / tilePixelSize) * TILE_SIZE_PX,
-      y: ((pixelY - tilePixel.y) / tilePixelSize) * TILE_SIZE_PX,
+      x: ((pixelX - tilePixel.x) / tilePixelSize) * 256,
+      y: ((pixelY - tilePixel.y) / tilePixelSize) * 256,
     }
   }, [])
 
@@ -364,6 +362,7 @@ export const useDrawingCanvasV2 = (
     startPoint,
     selectedTool,
     lineWidth,
+    baseZoom,
     getMapState,
     drawLineSegmentToTile,
     onDrawingComplete

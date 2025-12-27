@@ -3,8 +3,61 @@ import { storage } from '../firebase'
 import { TileCoord, TILE_SIZE } from '../types'
 
 /**
+ * 緯度経度からタイル座標を計算
+ */
+export function latLngToTileCoord(
+  lat: number,
+  lng: number,
+  zoom: number
+): TileCoord {
+  const totalTiles = Math.pow(2, zoom)
+
+  // 経度からタイルX座標を計算
+  const x = Math.floor(((lng + 180) / 360) * totalTiles)
+
+  // 緯度からタイルY座標を計算（メルカトル投影）
+  const latRad = (lat * Math.PI) / 180
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * totalTiles
+  )
+
+  return { zoom, x, y }
+}
+
+/**
+ * 緯度経度からタイル内のローカル座標を計算（0-256ピクセル）
+ */
+export function latLngToTileLocal(
+  lat: number,
+  lng: number,
+  tileCoord: TileCoord
+): { x: number; y: number } {
+  const totalTiles = Math.pow(2, tileCoord.zoom)
+
+  // タイルの左上の経度緯度を計算
+  const tileLng = (tileCoord.x / totalTiles) * 360 - 180
+  const n = Math.PI - (2 * Math.PI * tileCoord.y) / totalTiles
+  const tileLat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)))
+
+  // 次のタイルの左上（=このタイルの右下）の経度緯度
+  const nextTileLng = ((tileCoord.x + 1) / totalTiles) * 360 - 180
+  const nextN = Math.PI - (2 * Math.PI * (tileCoord.y + 1)) / totalTiles
+  const nextTileLat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(nextN) - Math.exp(-nextN)))
+
+  // タイル内の相対位置を計算（0-1）
+  const relX = (lng - tileLng) / (nextTileLng - tileLng)
+  const relY = (tileLat - lat) / (tileLat - nextTileLat)
+
+  return {
+    x: relX * TILE_SIZE,
+    y: relY * TILE_SIZE
+  }
+}
+
+/**
  * ピクセル座標からタイル座標を計算
  * Google Maps のタイル座標系に合わせた計算
+ * 注意: この関数は回転を考慮しない。回転時はlatLngToTileCoordを使用すること。
  */
 export function pixelToTileCoord(
   pixelX: number,
@@ -33,13 +86,11 @@ export function pixelToTileCoord(
 }
 
 /**
- * タイル座標からピクセル座標（タイルの左上）を計算
+ * タイル座標から緯度経度（タイルの左上）を計算
  */
-export function tileCoordToPixel(
-  coord: TileCoord,
-  mapBounds: { north: number; south: number; east: number; west: number },
-  mapSize: { width: number; height: number }
-): { x: number; y: number } {
+export function tileCoordToLatLng(
+  coord: TileCoord
+): { lat: number; lng: number } {
   const totalTiles = Math.pow(2, coord.zoom)
 
   // タイルX座標から経度を計算
@@ -48,6 +99,19 @@ export function tileCoordToPixel(
   // タイルY座標から緯度を計算（メルカトル投影）
   const n = Math.PI - (2 * Math.PI * coord.y) / totalTiles
   const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)))
+
+  return { lat, lng }
+}
+
+/**
+ * タイル座標からピクセル座標（タイルの左上）を計算
+ */
+export function tileCoordToPixel(
+  coord: TileCoord,
+  mapBounds: { north: number; south: number; east: number; west: number },
+  mapSize: { width: number; height: number }
+): { x: number; y: number } {
+  const { lat, lng } = tileCoordToLatLng(coord)
 
   // 経度緯度からピクセル座標に変換
   const x = ((lng - mapBounds.west) / (mapBounds.east - mapBounds.west)) * mapSize.width

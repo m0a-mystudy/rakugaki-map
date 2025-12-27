@@ -144,17 +144,24 @@ export const useDrawingV2 = (
   }
 
   const handleAutoSave = useCallback(async () => {
+    console.log('🔄 handleAutoSave called:', { user: !!user, drawingId, userId: user?.uid })
+
     if (!user || !drawingId) {
+      console.log('⚠️ Save skipped: user or drawingId missing', { user: !!user, drawingId })
       return
     }
 
     const dirtyTiles = tileCache.getDirtyTiles()
+    console.log('🔄 Dirty tiles:', dirtyTiles.length)
+
     if (dirtyTiles.length === 0) {
+      console.log('⚠️ Save skipped: no dirty tiles')
       return
     }
 
     setIsSaving(true)
     try {
+      console.log('💾 Starting save...')
       const updatedLayers = await saveDrawingV2(
         drawingId,
         layers,
@@ -163,8 +170,9 @@ export const useDrawingV2 = (
         tileCache
       )
       setLayers(updatedLayers)
+      console.log('✅ Save completed successfully')
     } catch (error) {
-      console.error('Failed to auto-save drawing:', error)
+      console.error('❌ Failed to auto-save drawing:', error)
     } finally {
       setIsSaving(false)
     }
